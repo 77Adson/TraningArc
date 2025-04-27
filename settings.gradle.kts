@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "TraningArc"
+rootProject.name = "TrainingArc"
 include(":app")
  

@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.traningarc"
+    namespace = "com.example.trainingarc"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.traningarc"
+        applicationId = "com.example.trainingarc"
         minSdk = 23
         targetSdk = 35
         versionCode = 1
