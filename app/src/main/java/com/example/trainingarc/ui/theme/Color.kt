@@ -1,4 +1,4 @@
-package com.example.traningarc.ui.theme
+package com.example.trainingarc.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

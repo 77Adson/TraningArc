@@ -1,4 +1,4 @@
-package com.example.traningarc
+package com.example.trainingarc
 
 import org.junit.Test
 
