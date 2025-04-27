@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "522580804026",
+    "project_id": "traningarc-wip",
+    "storage_bucket": "traningarc-wip.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:522580804026:android:c821a3762ce15b33ec9d83",
+        "android_client_info": {
+          "package_name": "com.example.traningarc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFWMTGJHd5X7289-D3h1Uw1EJ4L-Jrg30"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

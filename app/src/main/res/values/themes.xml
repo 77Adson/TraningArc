@@ -2,4 +2,5 @@
 <resources>
 
     <style name="Theme.TraningArc" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Primary brand color -->
 </resources>
