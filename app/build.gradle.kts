@@ -57,6 +57,8 @@ dependencies {
     implementation(libs.googleid)
     // ViewModel + Compose
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    // Navigation Compose
+    implementation(libs.androidx.navigation.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
