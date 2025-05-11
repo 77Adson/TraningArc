@@ -1,23 +1,24 @@
 package com.example.trainingarc.features.home.screens
 
-// home/screens/HomeScreen.kt
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trainingarc.features.auth.viewmodel.AuthViewModel
+import com.example.trainingarc.features.home.viewmodel.HomeViewModel
 
 @Composable
 fun HomeScreen(
     onLogout: () -> Unit,
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = viewModel(),
+    homeViewModel: HomeViewModel = viewModel()
 ) {
-    val currentUser = authViewModel.currentUser
+    val userData by homeViewModel.userData
+    val greeting by homeViewModel.greetingMessage
 
     Column(
         modifier = Modifier
@@ -27,13 +28,13 @@ fun HomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Welcome to the App!",
+            text = greeting,
             style = MaterialTheme.typography.headlineMedium,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 24.dp)
         )
 
-        currentUser?.email?.let { email ->
+        userData?.email?.let { email ->
             Text(
                 text = "Logged in as: $email",
                 style = MaterialTheme.typography.bodyLarge,

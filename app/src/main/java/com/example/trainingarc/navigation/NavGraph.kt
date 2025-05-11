@@ -10,7 +10,6 @@ import com.example.trainingarc.features.auth.screens.RegisterScreen
 import com.example.trainingarc.features.auth.viewmodel.AuthViewModel
 import com.example.trainingarc.features.home.screens.HomeScreen
 
-// navigation/NavGraph.kt
 @Composable
 fun NavGraph(
     authViewModel: AuthViewModel = viewModel()

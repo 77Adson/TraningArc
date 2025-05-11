@@ -5,7 +5,6 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
@@ -14,8 +13,6 @@ class AuthViewModel : ViewModel() {
 
     private val _isLoggedIn = mutableStateOf(auth.currentUser != null)
     val isLoggedIn: State<Boolean> = _isLoggedIn
-
-    val currentUser: FirebaseUser? get() = auth.currentUser
 
     private val _isLoading = mutableStateOf(false)
     val isLoading: State<Boolean> = _isLoading
