@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">TrainingArc</string>
+    <string name="welcome_message">Witaj w aplikacji!</string>
+    <string name="logout_button">Wyloguj się</string>
 </resources>

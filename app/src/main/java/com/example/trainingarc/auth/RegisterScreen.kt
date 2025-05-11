@@ -1,6 +1,6 @@
+// RegisterScreen.kt
 package com.example.trainingarc.auth
 
-// auth/RegisterScreen.kt
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -11,13 +11,14 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun RegisterScreen(
-    viewModel: AuthViewModel,
+    onRegister: (String, String) -> Unit,
     onNavigateToLogin: () -> Unit,
-    onRegisterSuccess: () -> Unit
+    errorMessage: String?,
+    isLoading: Boolean,
+    onErrorDismiss: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -34,7 +35,8 @@ fun RegisterScreen(
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isLoading
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -44,39 +46,42 @@ fun RegisterScreen(
             onValueChange = { password = it },
             label = { Text("Password") },
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isLoading
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = {
-                if (email.isBlank() || password.isBlank()) {
-                    errorMessage = "Email and password cannot be empty"
-                } else {
-                    viewModel.registerUser(email, password) { success, message ->
-                        if (success) {
-                            onRegisterSuccess()
-                        } else {
-                            errorMessage = message
-                        }
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
+            onClick = { onRegister(email, password) },  // Przekazujemy oba parametry
+            enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
         ) {
-            Text("Register")
+            if (isLoading) {
+                CircularProgressIndicator()
+            } else {
+                Text("Zarejestruj się")
+            }
         }
 
-        TextButton(onClick = onNavigateToLogin) {
+        TextButton(
+            onClick = onNavigateToLogin,
+            enabled = !isLoading
+        ) {
             Text("Already have an account? Login")
         }
 
+        // Wyświetlanie błędów
         errorMessage?.let {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = it,
-                color = MaterialTheme.colorScheme.error
+            AlertDialog(
+                onDismissRequest = onErrorDismiss,
+                title = { Text("Error") },
+                text = { Text(it) },
+                confirmButton = {
+                    Button(onClick = onErrorDismiss) {
+                        Text("OK")
+                    }
+                }
             )
         }
     }
