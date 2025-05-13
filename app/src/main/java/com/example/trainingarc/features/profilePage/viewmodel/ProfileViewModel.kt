@@ -1,4 +1,4 @@
-package com.example.trainingarc.features.home.viewmodel
+package com.example.trainingarc.features.profilePage.viewmodel
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -7,7 +7,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
-class HomeViewModel : ViewModel() {
+class ProfileViewModel : ViewModel() {
     private val auth = Firebase.auth
 
     private val _userData = mutableStateOf<FirebaseUser?>(auth.currentUser)

@@ -1,4 +1,4 @@
-package com.example.trainingarc.features.home.screens
+package com.example.trainingarc.features.profilePage.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -8,17 +8,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.trainingarc.features.auth.viewmodel.AuthViewModel
-import com.example.trainingarc.features.home.viewmodel.HomeViewModel
+import com.example.trainingarc.features.profilePage.viewmodel.ProfileViewModel
 
 @Composable
-fun HomeScreen(
+fun ProfileScreen(
     onLogout: () -> Unit,
-    authViewModel: AuthViewModel = viewModel(),
-    homeViewModel: HomeViewModel = viewModel()
+    profileViewModel: ProfileViewModel = viewModel()
 ) {
-    val userData by homeViewModel.userData
-    val greeting by homeViewModel.greetingMessage
+    val userData by profileViewModel.userData
+    val greeting by profileViewModel.greetingMessage
 
     Column(
         modifier = Modifier

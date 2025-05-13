@@ -1,64 +1,91 @@
 package com.example.trainingarc.navigation
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.trainingarc.features.auth.screens.LoginScreen
 import com.example.trainingarc.features.auth.screens.RegisterScreen
 import com.example.trainingarc.features.auth.viewmodel.AuthViewModel
-import com.example.trainingarc.features.home.screens.HomeScreen
+import com.example.trainingarc.features.components.BottomNavigationBar
+import com.example.trainingarc.features.friendsPage.screens.FriendsScreen
+import com.example.trainingarc.features.homePage.screens.HomeScreen
+import com.example.trainingarc.features.profilePage.screens.ProfileScreen
+import com.example.trainingarc.features.settingsPage.screen.SettingsScreen
 
+// navigation/NavGraph.kt
 @Composable
 fun NavGraph(
     authViewModel: AuthViewModel = viewModel()
 ) {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
 
-    NavHost(
-        navController = navController,
-        startDestination = if (authViewModel.isLoggedIn.value) Routes.Home.route else Routes.Login.route
-    ) {
-        composable(Routes.Login.route) {
-            LoginScreen(
-                onLogin = { email, password ->
-                    authViewModel.loginUser(email, password) { success ->
-                        if (success) navController.navigate(Routes.Home.route) {
-                            popUpTo(Routes.Login.route) { inclusive = true }
+    // Determine if bottom bar should be visible
+    val currentRoute = navBackStackEntry?.destination?.route
+    val showBottomBar = currentRoute in Routes.bottomNavRoutes && authViewModel.isLoggedIn.value
+
+    Scaffold(
+        bottomBar = {
+            if (showBottomBar) {
+                BottomNavigationBar(navController = navController)
+            }
+        }
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = if (authViewModel.isLoggedIn.value) Routes.Home.route else Routes.Login.route,
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            // Auth screens
+            composable(Routes.Login.route) {
+                LoginScreen(
+                    onLogin = { email, password ->
+                        authViewModel.loginUser(email, password) { success ->
+                            if (success) navController.navigate(Routes.Home.route) {
+                                popUpTo(Routes.Login.route) { inclusive = true }
+                            }
+                        }
+                    },
+                    onNavigateToRegister = {
+                        navController.navigate(Routes.Register.route)
+                    }
+                )
+            }
+
+            composable(Routes.Register.route) {
+                RegisterScreen(
+                    onRegister = { email, password ->
+                        authViewModel.registerUser(email, password) { success ->
+                            if (success) navController.popBackStack()
+                        }
+                    },
+                    onNavigateToLogin = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            // Main app screens
+            composable(Routes.Profile.route) {
+                ProfileScreen(
+                    onLogout = {
+                        authViewModel.logout()
+                        navController.navigate(Routes.Login.route) {
+                            popUpTo(Routes.Home.route) { inclusive = true }
                         }
                     }
-                },
-                onNavigateToRegister = {
-                    navController.navigate(Routes.Register.route)
-                }
-            )
-        }
-
-        composable(Routes.Register.route) {
-            RegisterScreen(
-                onRegister = { email, password ->
-                    authViewModel.registerUser(email, password) { success ->
-                        if (success) {
-                            navController.popBackStack()
-                        }
-                    }
-                },
-                onNavigateToLogin = {
-                    navController.popBackStack()
-                }
-            )
-        }
-
-        composable(Routes.Home.route) {
-            HomeScreen(
-                onLogout = {
-                    authViewModel.logout()
-                    navController.navigate(Routes.Login.route) {
-                        popUpTo(Routes.Home.route) { inclusive = true }
-                    }
-                }
-            )
+                )
+            }
+            composable(Routes.Friends.route) { FriendsScreen() }
+            composable(Routes.Settings.route) { SettingsScreen() }
+            composable(Routes.Home.route) { HomeScreen() }
         }
     }
 }
