@@ -4,21 +4,23 @@ package com.example.trainingarc.navigation
 sealed class Routes(val route: String) {
 
     // Auth navigation
-    object Login : Routes("login")
-    object Register : Routes("register")
+    data object Login : Routes("login")
+    data object Register : Routes("register")
 
     // Main app navigation (bottom panel)
-    object Home : Routes("home")        //home screen
-    object Friends : Routes("friends")  //firends screen
-    object Settings : Routes("settings")  //settings screen
-    object Profile : Routes("profile")  //profile screen
+    data object Home : Routes("home")
+    data object Friends : Routes("friends")
+    data object Settings : Routes("settings")
+    data object Profile : Routes("profile")
 
-    // Subpages example
-    object Training : Routes("training")
-
+    data object SessionDetail : Routes("sessionDetail/{sessionId}") {
+        fun createRoute(sessionId: String): String {
+            return "sessionDetail/$sessionId"
+        }
+    }
     companion object {
         // Helper list of all bottom nav screens
-        val bottomNavItems = listOf(Home, Friends, Settings, Profile)
+        private val bottomNavItems = listOf(Home, Friends, Settings, Profile)
 
         // List of just the route strings for easy checking
         val bottomNavRoutes = bottomNavItems.map { it.route }

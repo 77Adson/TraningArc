@@ -6,16 +6,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.trainingarc.features.auth.screens.LoginScreen
 import com.example.trainingarc.features.auth.screens.RegisterScreen
 import com.example.trainingarc.features.auth.viewmodel.AuthViewModel
 import com.example.trainingarc.features.components.BottomNavigationBar
 import com.example.trainingarc.features.friendsPage.screens.FriendsScreen
 import com.example.trainingarc.features.homePage.screens.HomeScreen
+import com.example.trainingarc.features.homePage.screens.SessionDetailScreen
 import com.example.trainingarc.features.profilePage.screens.ProfileScreen
 import com.example.trainingarc.features.settingsPage.screen.SettingsScreen
 
@@ -86,6 +89,16 @@ fun NavGraph(
             composable(Routes.Friends.route) { FriendsScreen() }
             composable(Routes.Settings.route) { SettingsScreen() }
             composable(Routes.Home.route) { HomeScreen() }
+
+            // navigation/NavGraph.kt
+            composable(
+                route = Routes.SessionDetail.route,
+                arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                SessionDetailScreen(
+                    sessionId = backStackEntry.arguments?.getString("sessionId")
+                )
+            }
         }
     }
 }
