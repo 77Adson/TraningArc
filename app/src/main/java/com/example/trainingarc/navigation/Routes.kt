@@ -18,6 +18,15 @@ sealed class Routes(val route: String) {
             return "sessionDetail/$sessionId"
         }
     }
+
+    data object WorkoutList : Routes("workoutList/{sessionId}") {
+        fun createRoute(sessionId: String): String = "workoutList/$sessionId"
+    }
+
+    data object WorkoutDetail : Routes("workoutDetail/{workoutId}") {
+        fun createRoute(workoutId: String) = "workoutDetail/$workoutId"
+    }
+
     companion object {
         // Helper list of all bottom nav screens
         private val bottomNavItems = listOf(Home, Friends, Settings, Profile)

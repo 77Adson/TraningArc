@@ -59,6 +59,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     // Navigation Compose
     implementation(libs.androidx.navigation.compose)
+    implementation("androidx.navigation:navigation-runtime-android:2.9.0")
+    implementation("com.google.firebase:firebase-firestore-ktx:25.1.4")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

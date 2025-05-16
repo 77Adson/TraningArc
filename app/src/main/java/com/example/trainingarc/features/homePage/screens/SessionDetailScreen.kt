@@ -19,7 +19,7 @@ import com.example.trainingarc.features.homePage.viewmodel.SessionViewModel
 @Composable
 fun SessionDetailScreen(
     sessionId: String?,
-    navController: NavController = rememberNavController(),
+    navController: NavController,
     sessionViewModel: SessionViewModel = viewModel()
 ) {
     // Observe ViewModel state

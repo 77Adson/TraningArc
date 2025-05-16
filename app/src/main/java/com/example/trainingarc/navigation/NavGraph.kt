@@ -19,18 +19,17 @@ import com.example.trainingarc.features.components.BottomNavigationBar
 import com.example.trainingarc.features.friendsPage.screens.FriendsScreen
 import com.example.trainingarc.features.homePage.screens.HomeScreen
 import com.example.trainingarc.features.homePage.screens.SessionDetailScreen
+import com.example.trainingarc.features.homePage.screens.WorkoutDetailScreen
+import com.example.trainingarc.features.homePage.screens.WorkoutListScreen
 import com.example.trainingarc.features.profilePage.screens.ProfileScreen
 import com.example.trainingarc.features.settingsPage.screen.SettingsScreen
 
-// navigation/NavGraph.kt
 @Composable
 fun NavGraph(
     authViewModel: AuthViewModel = viewModel()
 ) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
-
-    // Determine if bottom bar should be visible
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute in Routes.bottomNavRoutes && authViewModel.isLoggedIn.value
 
@@ -46,13 +45,15 @@ fun NavGraph(
             startDestination = if (authViewModel.isLoggedIn.value) Routes.Home.route else Routes.Login.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            // Auth screens
+            // Auth
             composable(Routes.Login.route) {
                 LoginScreen(
                     onLogin = { email, password ->
                         authViewModel.loginUser(email, password) { success ->
-                            if (success) navController.navigate(Routes.Home.route) {
-                                popUpTo(Routes.Login.route) { inclusive = true }
+                            if (success) {
+                                navController.navigate(Routes.Home.route) {
+                                    popUpTo(Routes.Login.route) { inclusive = true }
+                                }
                             }
                         }
                     },
@@ -75,7 +76,7 @@ fun NavGraph(
                 )
             }
 
-            // Main app screens
+            // Main
             composable(Routes.Profile.route) {
                 ProfileScreen(
                     onLogout = {
@@ -88,16 +89,36 @@ fun NavGraph(
             }
             composable(Routes.Friends.route) { FriendsScreen() }
             composable(Routes.Settings.route) { SettingsScreen() }
-            composable(Routes.Home.route) { HomeScreen() }
 
-            // navigation/NavGraph.kt
+            composable(Routes.Home.route) {
+                HomeScreen(navController = navController) // ⬅️ przekazujemy właściwego
+            }
+
             composable(
                 route = Routes.SessionDetail.route,
                 arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
             ) { backStackEntry ->
+                val sessionId = backStackEntry.arguments?.getString("sessionId")
                 SessionDetailScreen(
-                    sessionId = backStackEntry.arguments?.getString("sessionId")
+                    sessionId = sessionId,
+                    navController = navController
                 )
+            }
+
+            composable(
+                route = Routes.WorkoutList.route,
+                arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
+                WorkoutListScreen(sessionId = sessionId, navController = navController)
+            }
+
+            composable(
+                route = Routes.WorkoutDetail.route,
+                arguments = listOf(navArgument("workoutId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val workoutId = backStackEntry.arguments?.getString("workoutId") ?: return@composable
+                WorkoutDetailScreen(workoutId = workoutId, navController = navController)
             }
         }
     }
