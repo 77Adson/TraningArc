@@ -1,4 +1,3 @@
-// RegisterScreen.kt
 package com.example.trainingarc.features.auth.screens
 
 import androidx.compose.foundation.layout.*
@@ -6,35 +5,37 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trainingarc.features.auth.viewmodel.AuthViewModel
+import com.example.trainingarc.features.components.EmailTextField
+import com.example.trainingarc.features.components.LoadingIndicator
+import com.example.trainingarc.features.components.PasswordTextField
 
 @Composable
 fun RegisterScreen(
-    onRegister: (String, String) -> Unit,
+    onRegisterSuccess: () -> Unit,
     onNavigateToLogin: () -> Unit,
-    authViewModel: AuthViewModel = viewModel()
+    viewModel: AuthViewModel = viewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var passwordError by remember { mutableStateOf<String?>(null) }
+    var showPassword by remember { mutableStateOf(false) }
 
-    val isLoading by authViewModel.isLoading
-    val authErrorMessage by authViewModel.errorMessage
+    val authState by viewModel.state.collectAsStateWithLifecycle()
 
-    if (isLoading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(48.dp),
-                color = MaterialTheme.colorScheme.primary
-            )
+    // Handle successful registration
+    LaunchedEffect(authState.isLoggedIn) {
+        if (authState.isLoggedIn) {
+            onRegisterSuccess()
         }
+    }
+
+    // Show loading indicator if loading
+    if (authState.isLoading) {
+        LoadingIndicator()
         return
     }
 
@@ -48,81 +49,66 @@ fun RegisterScreen(
         Text(
             text = "Register",
             style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        OutlinedTextField(
+        EmailTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            enabled = !isLoading
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
+        PasswordTextField(
             value = password,
-            onValueChange = {
-                password = it
-                passwordError = null
-            },
-            label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(),
+            onValueChange = { password = it },
+            showPassword = showPassword,
+            onToggleVisibility = { showPassword = !showPassword },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            isError = passwordError != null,
-            enabled = !isLoading
+            label = "Password"
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
+        PasswordTextField(
             value = confirmPassword,
-            onValueChange = {
-                confirmPassword = it
-                passwordError = null
-            },
-            label = { Text("Confirm Password") },
-            visualTransformation = PasswordVisualTransformation(),
+            onValueChange = { confirmPassword = it },
+            showPassword = showPassword,
+            onToggleVisibility = { showPassword = !showPassword },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            isError = passwordError != null,
-            enabled = !isLoading
+            label = "Confirm Password"
         )
 
-        passwordError?.let { error ->
+        authState.error?.let { error ->
             Text(
-                text = error,
+                text = error.toUserMessage(),
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(top = 4.dp)
+                modifier = Modifier.padding(top = 8.dp)
             )
-            Spacer(modifier = Modifier.height(8.dp))
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
-                when {
-                    password != confirmPassword -> {
-                        passwordError = "Passwords don't match"
-                    }
-                    password.length < 6 -> {
-                        passwordError = "Password must be at least 6 characters"
-                    }
-                    else -> {
-                        onRegister(email, password)
-                    }
-                }
+                viewModel.registerUser(
+                    email = email,
+                    password = password,
+                    confirmPassword = confirmPassword
+                )
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp),
             enabled = email.isNotBlank() &&
                     password.isNotBlank() &&
-                    confirmPassword.isNotBlank()
+                    confirmPassword.isNotBlank(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
         ) {
             Text("Register")
         }
@@ -131,25 +117,12 @@ fun RegisterScreen(
 
         TextButton(
             onClick = onNavigateToLogin,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.textButtonColors(
+                contentColor = MaterialTheme.colorScheme.tertiary
+            )
         ) {
             Text("Already have an account? Login")
         }
-    }
-
-    // Handle authentication errors
-    if (authErrorMessage != null) {
-        AlertDialog(
-            onDismissRequest = { authViewModel.clearError() },
-            title = { Text("Error") },
-            text = { Text(authErrorMessage!!) },
-            confirmButton = {
-                Button(
-                    onClick = { authViewModel.clearError() }
-                ) {
-                    Text("OK")
-                }
-            }
-        )
     }
 }

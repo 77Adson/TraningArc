@@ -16,7 +16,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             TrainingArcTheme(
-                darkTheme = false
             ) {
                 System.out.println("Current Theme background color: ${MaterialTheme.colorScheme.background}")
                 Surface(

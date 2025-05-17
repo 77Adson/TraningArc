@@ -55,12 +55,12 @@ dependencies {
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
-    // ViewModel + Compose
     implementation(libs.androidx.lifecycle.viewmodel.compose)
-    // Navigation Compose
     implementation(libs.androidx.navigation.compose)
-    implementation("androidx.navigation:navigation-runtime-android:2.9.0")
-    implementation("com.google.firebase:firebase-firestore-ktx:25.1.4")
+    implementation(libs.androidx.navigation.runtime.android)
+    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.androidx.espresso.core)
+    implementation(libs.androidx.animation.core.lint)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -68,5 +68,6 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    implementation(libs.androidx.material.icons.extended.android)
 
 }

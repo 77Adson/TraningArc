@@ -10,8 +10,8 @@ private val DarkColorScheme = darkColorScheme(
     primary = MyrtleGreen,
     secondary = Isabelline,
     tertiary = Rust,
-    background = Wenge,
-    surface = Gunmetal,
+    background = Gunmetal,
+    surface = Wenge,
     onPrimary = Isabelline,
     onSecondary = Isabelline,
     onTertiary = Isabelline,
@@ -20,7 +20,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = MyrtleGreen,
+    primary = Rust,
     secondary = Wenge,
     tertiary = Rust,
     background = Isabelline,

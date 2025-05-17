@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -33,7 +34,10 @@ fun NavGraph(
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-    val showBottomBar = currentRoute in Routes.bottomNavRoutes && authViewModel.isLoggedIn.value
+
+    //Stateflow from ViewModel
+    val authState by authViewModel.state.collectAsStateWithLifecycle()
+    val showBottomBar = currentRoute in Routes.bottomNavRoutes && authState.isLoggedIn
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -45,19 +49,17 @@ fun NavGraph(
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = if (authViewModel.isLoggedIn.value) Routes.Home.route else Routes.Login.route,
+            // CHANGED: Using authState instead of authViewModel.isLoggedIn.value
+            startDestination = if (authState.isLoggedIn) Routes.Home.route else Routes.Login.route,
             modifier = Modifier.padding(innerPadding)
         ) {
             // Auth
             composable(Routes.Login.route) {
                 LoginScreen(
-                    onLogin = { email, password ->
-                        authViewModel.loginUser(email, password) { success ->
-                            if (success) {
-                                navController.navigate(Routes.Home.route) {
-                                    popUpTo(Routes.Login.route) { inclusive = true }
-                                }
-                            }
+                    // CHANGED: Removed onLogin callback since ViewModel handles it directly
+                    onLoginSuccess = {
+                        navController.navigate(Routes.Home.route) {
+                            popUpTo(Routes.Login.route) { inclusive = true }
                         }
                     },
                     onNavigateToRegister = {
@@ -68,9 +70,10 @@ fun NavGraph(
 
             composable(Routes.Register.route) {
                 RegisterScreen(
-                    onRegister = { email, password ->
-                        authViewModel.registerUser(email, password) { success ->
-                            if (success) navController.popBackStack()
+                    onRegisterSuccess = {
+                        // Navigate to home on successful registration
+                        navController.navigate(Routes.Home.route) {
+                            popUpTo(Routes.Login.route) { inclusive = true }
                         }
                     },
                     onNavigateToLogin = {

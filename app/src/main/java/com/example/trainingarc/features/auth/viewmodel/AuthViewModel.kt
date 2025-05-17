@@ -1,59 +1,81 @@
-// AuthViewModel.kt
 package com.example.trainingarc.features.auth.viewmodel
 
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.trainingarc.features.auth.model.AuthError
+import com.example.trainingarc.features.auth.model.AuthState
+import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthUserCollisionException
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 class AuthViewModel : ViewModel() {
     private val auth: FirebaseAuth = Firebase.auth
 
-    private val _isLoggedIn = mutableStateOf(auth.currentUser != null)
-    val isLoggedIn: State<Boolean> = _isLoggedIn
-
-    private val _isLoading = mutableStateOf(false)
-    val isLoading: State<Boolean> = _isLoading
-
-    private val _errorMessage = mutableStateOf<String?>(null)
-    val errorMessage: State<String?> = _errorMessage
+    private val _state = MutableStateFlow(
+        AuthState(isLoggedIn = auth.currentUser != null)
+    )
+    val state: StateFlow<AuthState> = _state.asStateFlow()
 
     init {
         auth.addAuthStateListener { firebaseAuth ->
-            _isLoggedIn.value = firebaseAuth.currentUser != null
+            _state.value = _state.value.copy(
+                isLoggedIn = firebaseAuth.currentUser != null
+            )
         }
     }
 
-    fun loginUser(email: String, password: String, onComplete: (Boolean) -> Unit) {
-        _isLoading.value = true
-        _errorMessage.value = null
+    fun loginUser(email: String, password: String) = viewModelScope.launch {
+        _state.value = _state.value.copy(
+            isLoading = true,
+            error = null
+        )
 
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
-                _isLoading.value = false
-                if (task.isSuccessful) {
-                    onComplete(true)
-                } else {
-                    _errorMessage.value = task.exception?.message ?: "Login failed"
-                    onComplete(false)
+                _state.value = _state.value.copy(isLoading = false)
+
+                if (!task.isSuccessful) {
+                    _state.value = _state.value.copy(
+                        error = task.exception?.toAuthError() ?: AuthError.UnknownError
+                    )
                 }
             }
     }
 
-    fun registerUser(email: String, password: String, onComplete: (Boolean) -> Unit) {
-        _isLoading.value = true
-        _errorMessage.value = null
+    fun registerUser(email: String, password: String, confirmPassword: String) = viewModelScope.launch {
+        // Clear previous errors and set loading state
+        _state.value = _state.value.copy(
+            isLoading = true,
+            error = null
+        )
 
+        // First validate locally
+        validatePassword(password, confirmPassword)?.let { validationError ->
+            _state.value = _state.value.copy(
+                isLoading = false,
+                error = validationError
+            )
+            return@launch
+        }
+
+        // Only proceed to Firebase if validation passes
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener { task ->
-                _isLoading.value = false
-                if (task.isSuccessful) {
-                    onComplete(true)
-                } else {
-                    _errorMessage.value = task.exception?.message ?: "Registration failed"
-                    onComplete(false)
+                _state.value = _state.value.copy(isLoading = false)
+
+                if (!task.isSuccessful) {
+                    _state.value = _state.value.copy(
+                        error = task.exception?.toAuthError() ?: AuthError.UnknownError
+                    )
                 }
             }
     }
@@ -63,6 +85,24 @@ class AuthViewModel : ViewModel() {
     }
 
     fun clearError() {
-        _errorMessage.value = null
+        _state.value = _state.value.copy(error = null)
     }
+
+    private fun validatePassword(password: String, confirmPassword: String): AuthError? {
+        return when {
+            password != confirmPassword -> AuthError.PasswordMismatch
+            password.length < 6 -> AuthError.WeakPassword
+            else -> null
+        }
+    }
+}
+
+// Extension function to convert Firebase exceptions to our AuthError
+private fun Exception.toAuthError(): AuthError = when (this) {
+    is FirebaseAuthInvalidUserException -> AuthError.UserNotFound
+    is FirebaseAuthInvalidCredentialsException -> AuthError.WrongPassword
+    is FirebaseAuthUserCollisionException -> AuthError.EmailAlreadyInUse
+    is FirebaseAuthWeakPasswordException -> AuthError.WeakPassword
+    is FirebaseNetworkException -> AuthError.NetworkError
+    else -> AuthError.FirebaseError(message ?: "Authentication failed")
 }
