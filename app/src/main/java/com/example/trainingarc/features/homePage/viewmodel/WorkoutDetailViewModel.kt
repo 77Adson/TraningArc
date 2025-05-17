@@ -44,4 +44,15 @@ class WorkoutDetailViewModel : ViewModel() {
             }
         }
     }
+
+    fun deleteWorkoutDetail(workoutId: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                database.child("workoutDetails/$workoutId").removeValue()
+                    .addOnSuccessListener { onSuccess() }
+            } catch (e: Exception) {
+                // Obsługa błędu
+            }
+        }
+    }
 }
