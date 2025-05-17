@@ -1,31 +1,47 @@
 package com.example.trainingarc.features.homePage.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import com.example.trainingarc.features.homePage.model.WorkoutDetail
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 
 class WorkoutDetailViewModel : ViewModel() {
+    private val auth = FirebaseAuth.getInstance()
+    private val database = FirebaseDatabase.getInstance().reference
 
-    // Na potrzeby przykładu, trzymamy dane lokalnie w MutableStateFlow
-    private val _details = MutableStateFlow<Map<String, WorkoutDetail>>(emptyMap())
-    val details: StateFlow<Map<String, WorkoutDetail>> = _details.asStateFlow()
+    private val _detail = MutableStateFlow<WorkoutDetail?>(null)
+    val detail: StateFlow<WorkoutDetail?> = _detail.asStateFlow()
 
-    // Pobierz szczegóły treningu jako Flow
-    fun getDetail(workoutId: String): Flow<WorkoutDetail> {
-        return details.map { it[workoutId] ?: WorkoutDetail(workoutId, "") }
+    fun getDetail(workoutId: String) {
+        viewModelScope.launch {
+            try {
+                database.child("workoutDetails/$workoutId")
+                    .get()
+                    .addOnSuccessListener { snapshot ->
+                        _detail.value = snapshot.getValue(WorkoutDetail::class.java)
+                            ?: WorkoutDetail(workoutId, "")
+                    }
+            } catch (e: Exception) {
+                // Handle error
+                _detail.value = WorkoutDetail(workoutId, "")
+            }
+        }
     }
 
-    // Zaktualizuj opis treningu
     fun updateDescription(workoutId: String, description: String) {
-        _details.update { currentMap ->
-            val updated = currentMap.toMutableMap()
-            updated[workoutId] = WorkoutDetail(workoutId, description)
-            updated
+        viewModelScope.launch {
+            try {
+                val updatedDetail = WorkoutDetail(workoutId, description)
+                database.child("workoutDetails/$workoutId").setValue(updatedDetail)
+                _detail.value = updatedDetail
+            } catch (e: Exception) {
+                // Handle error
+            }
         }
     }
 }

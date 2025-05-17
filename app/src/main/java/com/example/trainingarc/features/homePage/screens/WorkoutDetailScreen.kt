@@ -12,7 +12,6 @@ import androidx.navigation.NavController
 import com.example.trainingarc.features.homePage.model.WorkoutDetail
 import com.example.trainingarc.features.homePage.viewmodel.WorkoutDetailViewModel
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkoutDetailScreen(
@@ -20,9 +19,20 @@ fun WorkoutDetailScreen(
     navController: NavController,
     viewModel: WorkoutDetailViewModel = viewModel()
 ) {
-    val detailState = viewModel.getDetail(workoutId).collectAsState(initial = WorkoutDetail(workoutId, ""))
-    var description by remember { mutableStateOf(detailState.value.description) }
+    // Initialize with default empty WorkoutDetail
+    val detailState by viewModel.detail.collectAsState(initial = WorkoutDetail(workoutId, ""))
+    var description by remember { mutableStateOf(detailState?.description ?: "") }
     var isEditing by remember { mutableStateOf(false) }
+
+    // Load details when screen opens or workoutId changes
+    LaunchedEffect(workoutId) {
+        viewModel.getDetail(workoutId)
+    }
+
+    // Update local description when detailState changes
+    LaunchedEffect(detailState) {
+        description = detailState?.description ?: ""
+    }
 
     Scaffold(
         topBar = {
@@ -37,7 +47,7 @@ fun WorkoutDetailScreen(
         }
     ) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding).padding(16.dp)) {
-            Text(text = "Workout ID: ${detailState.value.workoutId}")
+            Text(text = "Workout ID: $workoutId")
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -62,14 +72,14 @@ fun WorkoutDetailScreen(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     OutlinedButton(onClick = {
-                        description = detailState.value.description
+                        description = detailState?.description ?: ""
                         isEditing = false
                     }) {
                         Text("Cancel")
                     }
                 }
             } else {
-                Text(text = "Description: ${detailState.value.description}")
+                Text(text = "Description: ${detailState?.description ?: "No description"}")
 
                 Spacer(modifier = Modifier.height(8.dp))
 

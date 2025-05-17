@@ -20,7 +20,7 @@ fun WorkoutListScreen(
     navController: NavController,
     viewModel: WorkoutViewModel = viewModel()
 ) {
-    val workouts = viewModel.getWorkouts(sessionId).collectAsState(initial = emptyList()).value
+    val workouts by viewModel.getWorkouts(sessionId).collectAsState(initial = emptyList())
     var showDialog by remember { mutableStateOf(false) }
     var newWorkoutName by remember { mutableStateOf("") }
 
