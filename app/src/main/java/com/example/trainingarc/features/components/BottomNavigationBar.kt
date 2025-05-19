@@ -2,93 +2,75 @@ package com.example.trainingarc.features.components
 
 // features/components/BottomNavigationBar.kt
 
-import androidx.compose.foundation.background
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.Color
-import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.trainingarc.navigation.Routes
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.trainingarc.R
+import com.example.trainingarc.navigation.Routes
+import com.example.trainingarc.ui.theme.sizes
 
 
 @Composable
-fun BottomNavigationBar(
-    navController: NavController
-) {
-    val items = listOf(
-        Routes.Home,
-        Routes.Friends,
-        Routes.Settings,
-        Routes.Profile
-    )
-
+fun BottomNavigationBar(navController: NavController) {
+    val items = listOf(Routes.Home, Routes.Friends, Routes.Settings, Routes.Profile)
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    NavigationBar {
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
+    ) {
         items.forEach { screen ->
             NavigationBarItem(
                 icon = {
-                    // Using colored circles as placeholders for icons
-                    Box(
-                        modifier = Modifier.size(24.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        when (screen) {
-                            Routes.Home -> Box(
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .background(Color.Red, CircleShape)
-                            )
-                            Routes.Friends -> Box(
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .background(Color.Blue, CircleShape)
-                            )
-                            Routes.Settings -> Box(
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .background(Color.Green, CircleShape)
-                            )
-                            Routes.Profile -> Box(
-                                modifier = Modifier
-                                    .size(20.dp)
-                                    .background(Color.Yellow, CircleShape)
-                            )
-                            else -> {}
-                        }
-                    }
+                    Icon(
+                        painter = painterResource(id = getIconRes(screen)),
+                        contentDescription = screen.route,
+                        modifier = Modifier
+                            .size(MaterialTheme.sizes.icons.extraLarge)
+                    )
                 },
-                label = { Text(screen.route) },
                 selected = currentRoute == screen.route,
-                onClick = {
-                    navController.navigate(screen.route) {
-                        // Avoid multiple copies of the same destination
-                        launchSingleTop = true
-                        // Restore state when reselecting an item
-                        restoreState = true
-                        // Pop up to the start destination to avoid building a large stack
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
-                        }
-                    }
-                },
+                onClick = { navigateToScreen(navController, screen) },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color.White,
-                    unselectedIconColor = Color.LightGray,
-                    selectedTextColor = Color.White,
-                    unselectedTextColor = Color.LightGray
-                )
+                    selectedIconColor = MaterialTheme.colorScheme.tertiary,
+                    unselectedIconColor = MaterialTheme.colorScheme.onBackground,
+                    // Indicator
+                    indicatorColor = MaterialTheme.colorScheme.secondary
+                ),
+                modifier = Modifier.height(72.dp)
             )
+        }
+    }
+}
+
+@Composable
+private fun getIconRes(screen: Routes): Int = when (screen) {
+    Routes.Home -> R.drawable.ic_home  // Your actual drawable resource
+    Routes.Friends -> R.drawable.ic_friends
+    Routes.Settings -> R.drawable.ic_settings
+    Routes.Profile -> R.drawable.ic_profile
+    else -> R.drawable.ic_default  // Fallback icon
+}
+
+private fun navigateToScreen(navController: NavController, screen: Routes) {
+    navController.navigate(screen.route) {
+        launchSingleTop = true
+        restoreState = true
+        popUpTo(navController.graph.findStartDestination().id) {
+            saveState = true
         }
     }
 }

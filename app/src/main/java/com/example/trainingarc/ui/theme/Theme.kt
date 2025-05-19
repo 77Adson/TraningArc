@@ -5,6 +5,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Composition
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 
 private val DarkColorScheme = darkColorScheme(
     primary = MyrtleGreen,
@@ -32,6 +38,40 @@ private val LightColorScheme = lightColorScheme(
     onSurface = Gunmetal
 )
 
+data class AppSizes(
+    val spacing: Spacing = Spacing(),
+    val icons: Icons = Icons(),
+    val components: Components = Components()
+) {
+    data class Spacing(
+        val none: Dp = 0.dp,
+        val extraSmall: Dp = 4.dp,
+        val small: Dp = 8.dp,
+        val medium: Dp = 16.dp,
+        val large: Dp = 24.dp,
+        val extraLarge: Dp = 32.dp
+    )
+
+    data class Icons(
+        val small: Dp = 16.dp,
+        val medium: Dp = 24.dp,
+        val large: Dp = 32.dp,
+        val extraLarge: Dp = 40.dp
+    )
+
+    data class Components(
+        val buttonHeight: Dp = 48.dp,
+        val navBarHeight: Dp = 64.dp
+    )
+}
+
+val LocalSizes = staticCompositionLocalOf { AppSizes() }
+
+val MaterialTheme.sizes: AppSizes
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalSizes.current
+
 @Composable
 fun TrainingArcTheme(
     darkTheme: Boolean = true,
@@ -40,12 +80,17 @@ fun TrainingArcTheme(
 ) {
     // Always use our custom colors, ignoring dynamic colors
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val appSizes = AppSizes()
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content,
-        shapes = AppShapes
-    )
+    CompositionLocalProvider(
+        LocalSizes provides appSizes
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content,
+            shapes = AppShapes
+            )
+    }
 }
 
