@@ -1,20 +1,37 @@
 package com.example.trainingarc.features.homePage.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.trainingarc.features.components.buttonsAndCards.AddWorkoutDialog
+import com.example.trainingarc.features.components.buttonsAndCards.DeleteSessionDialog
+import com.example.trainingarc.features.components.buttonsAndCards.DeleteWorkoutDialog
+import com.example.trainingarc.features.components.buttonsAndCards.EditWorkoutDialog
+import com.example.trainingarc.features.components.buttonsAndCards.WorkoutListScreenContent
+import com.example.trainingarc.features.components.buttonsAndCards.WorkoutListTopBar
 import com.example.trainingarc.features.homePage.model.Workout
 import com.example.trainingarc.features.homePage.viewmodel.WorkoutViewModel
 import com.example.trainingarc.navigation.Routes
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkoutListScreen(
     sessionId: String,
@@ -27,193 +44,103 @@ fun WorkoutListScreen(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var currentWorkout by remember { mutableStateOf<Workout?>(null) }
     var newWorkoutName by remember { mutableStateOf("") }
+    var showDeleteSessionConfirm by remember { mutableStateOf(false) }
 
     LaunchedEffect(sessionId) {
+        viewModel.setCurrentSession(sessionId)
         viewModel.getWorkouts(sessionId)
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Workouts") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
+            WorkoutListTopBar(
+                onBackClick = { navController.popBackStack() },
+                onDeleteSession = { showDeleteSessionConfirm = true }
             )
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = {
-                    newWorkoutName = ""
-                    showAddDialog = true
-                }
+                onClick = { showAddDialog = true }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Workout")
+                Icon(Icons.Default.Add, "Add Workout")
             }
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .padding(16.dp)
-        ) {
-            if (workouts.isEmpty()) {
-                Text(
-                    text = "No workouts yet",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(16.dp)
+        WorkoutListScreenContent(
+            workouts = workouts,
+            onWorkoutClick = { workoutId ->
+                navController.navigate(Routes.WorkoutDetail.createRoute(workoutId))
+            },
+            onEditClick = { workout ->
+                currentWorkout = workout
+                newWorkoutName = workout.name
+                showEditDialog = true
+            },
+            onDeleteClick = { workout ->
+                currentWorkout = workout
+                showDeleteConfirm = true
+            },
+            modifier = Modifier.padding(innerPadding)
+        )
+    }
+
+    if (showAddDialog) {
+        AddWorkoutDialog(
+            name = newWorkoutName,
+            onNameChange = { newWorkoutName = it },
+            onConfirm = {
+                viewModel.addWorkout(sessionId, newWorkoutName)
+                newWorkoutName = ""
+                showAddDialog = false
+            },
+            onDismiss = { showAddDialog = false }
+        )
+    }
+
+    // Similar dialog handling for edit/delete
+    // Edit Workout Dialog
+    if (showEditDialog && currentWorkout != null) {
+        EditWorkoutDialog(
+            name = newWorkoutName,
+            onNameChange = { newWorkoutName = it },
+            onConfirm = {
+                currentWorkout?.let { workout ->
+                    viewModel.updateWorkoutName(sessionId, workout.id, newWorkoutName)
+                }
+                showEditDialog = false
+            },
+            onDismiss = { showEditDialog = false }
+        )
+    }
+
+    // Delete Confirmation Dialog
+    if (showDeleteConfirm && currentWorkout != null) {
+        DeleteWorkoutDialog(
+            onConfirm = {
+                currentWorkout?.let { workout ->
+                    viewModel.deleteWorkout(sessionId, workout.id)
+                }
+                showDeleteConfirm = false
+            },
+            onDismiss = { showDeleteConfirm = false }
+        )
+    }
+
+    if (showDeleteSessionConfirm) {
+        DeleteSessionDialog(
+            onConfirm = {
+                viewModel.deleteCurrentSession(
+                    onSuccess = {
+                        showDeleteSessionConfirm = false
+                        navController.popBackStack()
+                    },
+                    onFailure = { e ->
+                        // Handle error (show snackbar or log)
+                        showDeleteSessionConfirm = false
+                    }
                 )
-            } else {
-                workouts.forEach { workout ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(8.dp)
-                        ) {
-                            Text(
-                                text = workout.name,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(start = 8.dp),
-                                style = MaterialTheme.typography.titleMedium
-                            )
-
-                            IconButton(
-                                onClick = {
-                                    navController.navigate(Routes.WorkoutDetail.createRoute(workout.id))
-                                }
-                            ) {
-                                Icon(Icons.Default.Info, "Details")
-                            }
-
-                            IconButton(
-                                onClick = {
-                                    currentWorkout = workout
-                                    newWorkoutName = workout.name
-                                    showEditDialog = true
-                                }
-                            ) {
-                                Icon(Icons.Default.Edit, "Edit")
-                            }
-
-                            IconButton(
-                                onClick = {
-                                    currentWorkout = workout
-                                    showDeleteConfirm = true
-                                }
-                            ) {
-                                Icon(Icons.Default.Delete, "Delete")
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Add Workout Dialog
-        if (showAddDialog) {
-            AlertDialog(
-                onDismissRequest = { showAddDialog = false },
-                title = { Text("Add New Workout") },
-                text = {
-                    Column {
-                        OutlinedTextField(
-                            value = newWorkoutName,
-                            onValueChange = { newWorkoutName = it },
-                            label = { Text("Workout Name") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            viewModel.addWorkout(sessionId, newWorkoutName)
-                            newWorkoutName = ""
-                            showAddDialog = false
-                        },
-                        enabled = newWorkoutName.isNotBlank()
-                    ) {
-                        Text("Add")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showAddDialog = false }) {
-                        Text("Cancel")
-                    }
-                }
-            )
-        }
-
-        // Edit Workout Dialog
-        if (showEditDialog && currentWorkout != null) {
-            AlertDialog(
-                onDismissRequest = { showEditDialog = false },
-                title = { Text("Edit Workout") },
-                text = {
-                    Column {
-                        OutlinedTextField(
-                            value = newWorkoutName,
-                            onValueChange = { newWorkoutName = it },
-                            label = { Text("Workout Name") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            currentWorkout?.let {
-                                viewModel.updateWorkoutName(sessionId, it.id, newWorkoutName)
-                            }
-                            showEditDialog = false
-                        },
-                        enabled = newWorkoutName.isNotBlank()
-                    ) {
-                        Text("Save")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showEditDialog = false }) {
-                        Text("Cancel")
-                    }
-                }
-            )
-        }
-
-        // Delete Confirmation Dialog
-        if (showDeleteConfirm && currentWorkout != null) {
-            AlertDialog(
-                onDismissRequest = { showDeleteConfirm = false },
-                title = { Text("Confirm Delete") },
-                text = { Text("Are you sure you want to delete this workout?") },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            currentWorkout?.let {
-                                viewModel.deleteWorkout(sessionId, it.id)
-                            }
-                            showDeleteConfirm = false
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Text("Delete")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteConfirm = false }) {
-                        Text("Cancel")
-                    }
-                }
-            )
-        }
+            },
+            onDismiss = { showDeleteSessionConfirm = false }
+        )
     }
 }

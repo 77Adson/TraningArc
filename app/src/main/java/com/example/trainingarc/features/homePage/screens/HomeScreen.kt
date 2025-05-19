@@ -1,27 +1,15 @@
 package com.example.trainingarc.features.homePage.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -37,17 +25,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.trainingarc.features.components.LoadingIndicator
+import com.example.trainingarc.features.components.buttonsAndCards.TrainingSessionCard
 import com.example.trainingarc.features.homePage.model.TrainingSession
 import com.example.trainingarc.features.homePage.viewmodel.HomeViewModel
 import com.example.trainingarc.navigation.Routes
+import com.example.trainingarc.features.components.buttonsAndCards.AddSessionButton
 
 @Composable
 fun HomeScreen(
@@ -70,13 +57,6 @@ fun HomeScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showDialog = true },
-                icon = { Icon(Icons.Default.Add, "Add") },
-                text = { Text("New Training Session") }
-            )
-        },
         containerColor = MaterialTheme.colorScheme.background // Set the background color
     ) { innerPadding ->
         //Main content
@@ -97,7 +77,7 @@ fun HomeScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     items(sessions) { session ->
                         TrainingSessionCard(
@@ -105,10 +85,16 @@ fun HomeScreen(
                             onClick = {
                                 navController.navigate(Routes.WorkoutList.createRoute(session.sessionId))
                             },
-                            onDelete = {
-                                currentSession = session
-                                showDeleteDialog = true
-                            }
+//                            onDelete = {
+//                                currentSession = session
+//                                showDeleteDialog = true
+//                            }
+                        )
+                    }
+                    item {
+                        AddSessionButton(
+                            modifier = Modifier,
+                            onClick = { showDialog = true }
                         )
                     }
                 }
@@ -179,48 +165,6 @@ fun HomeScreen(
                     }
                 }
             )
-        }
-    }
-}
-
-@Composable
-fun TrainingSessionCard(
-    session: TrainingSession,
-    onClick: () -> Unit,
-    onDelete: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = session.sessionName,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable(onClick = onClick)
-                )
-                IconButton(
-                    onClick = onDelete,
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
         }
     }
 }

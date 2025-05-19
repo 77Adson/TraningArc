@@ -1,5 +1,6 @@
 package com.example.trainingarc.features.homePage.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
@@ -18,6 +19,8 @@ class WorkoutViewModel : ViewModel() {
     private val database = FirebaseDatabase.getInstance().reference
     private val _workouts = MutableStateFlow<List<Workout>>(emptyList())
     val workouts: StateFlow<List<Workout>> = _workouts.asStateFlow()
+    private val _currentSessionId = MutableStateFlow<String?>(null)
+    val currentSessionId: StateFlow<String?> = _currentSessionId.asStateFlow()
 
     fun getWorkouts(sessionId: String) {
         viewModelScope.launch {
@@ -104,6 +107,37 @@ class WorkoutViewModel : ViewModel() {
                     .removeValue()
             } catch (e: Exception) {
                 // Handle error
+            }
+        }
+    }
+
+    fun setCurrentSession(sessionId: String) {
+        _currentSessionId.value = sessionId
+    }
+
+    fun deleteCurrentSession(onSuccess: () -> Unit = {}, onFailure: (Exception) -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                val userId = auth.currentUser?.uid ?: return@launch
+                val sessionId = _currentSessionId.value ?: return@launch
+
+                // First delete all workouts in this session
+                database.child("users/$userId/sessions/$sessionId/workouts")
+                    .removeValue()
+                    .addOnSuccessListener {
+                        // Then delete the session itself
+                        database.child("users/$userId/sessions/$sessionId")
+                            .removeValue()
+                            .addOnSuccessListener { onSuccess() }
+                            .addOnFailureListener { e ->
+                                onFailure(Exception("Failed to delete session", e))
+                            }
+                    }
+                    .addOnFailureListener { e ->
+                        onFailure(Exception("Failed to delete workouts", e))
+                    }
+            } catch (e: Exception) {
+                onFailure(e)
             }
         }
     }
