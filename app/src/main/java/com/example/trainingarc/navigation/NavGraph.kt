@@ -21,7 +21,6 @@ import com.example.trainingarc.features.auth.viewmodel.AuthViewModel
 import com.example.trainingarc.features.components.BottomNavigationBar
 import com.example.trainingarc.features.friendsPage.screens.FriendsScreen
 import com.example.trainingarc.features.homePage.screens.HomeScreen
-import com.example.trainingarc.features.homePage.screens.SessionDetailScreen
 import com.example.trainingarc.features.homePage.screens.WorkoutDetailScreen
 import com.example.trainingarc.features.homePage.screens.WorkoutListScreen
 import com.example.trainingarc.features.profilePage.screens.ProfileScreen
@@ -98,17 +97,6 @@ fun NavGraph(
 
             composable(Routes.Home.route) {
                 HomeScreen(navController = navController) // ⬅️ przekazujemy właściwego
-            }
-
-            composable(
-                route = Routes.SessionDetail.route,
-                arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val sessionId = backStackEntry.arguments?.getString("sessionId")
-                SessionDetailScreen(
-                    sessionId = sessionId,
-                    navController = navController
-                )
             }
 
             composable(

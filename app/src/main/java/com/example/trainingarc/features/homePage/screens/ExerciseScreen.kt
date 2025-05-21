@@ -9,14 +9,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.trainingarc.features.homePage.viewmodel.WorkoutDetailViewModel
+import com.example.trainingarc.features.homePage.viewmodel.ExerciseViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkoutDetailScreen(
     workoutId: String,
     navController: NavController,
-    viewModel: WorkoutDetailViewModel = viewModel()
+    viewModel: ExerciseViewModel = viewModel()
 ) {
     val detailState by viewModel.detail.collectAsState()
     var description by remember { mutableStateOf("") }

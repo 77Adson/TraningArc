@@ -1,6 +1,5 @@
 package com.example.trainingarc.features.homePage.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
@@ -14,7 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class WorkoutViewModel : ViewModel() {
+class ExercisesListViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance().reference
     private val _workouts = MutableStateFlow<List<Workout>>(emptyList())
@@ -22,7 +21,7 @@ class WorkoutViewModel : ViewModel() {
     private val _currentSessionId = MutableStateFlow<String?>(null)
     val currentSessionId: StateFlow<String?> = _currentSessionId.asStateFlow()
 
-    fun getWorkouts(sessionId: String) {
+    fun getExercisesList(sessionId: String) {
         viewModelScope.launch {
             try {
                 val userId = auth.currentUser?.uid ?: return@launch
@@ -45,30 +44,7 @@ class WorkoutViewModel : ViewModel() {
         }
     }
 
-    fun loadWorkouts(sessionId: String) {
-        viewModelScope.launch {
-            try {
-                val userId = auth.currentUser?.uid ?: return@launch
-                database.child("users/$userId/sessions/$sessionId/workouts")
-                    .addValueEventListener(object : ValueEventListener {
-                        override fun onDataChange(snapshot: DataSnapshot) {
-                            val workoutsList = snapshot.children.mapNotNull { child ->
-                                child.getValue(Workout::class.java)
-                            }
-                            _workouts.value = workoutsList
-                        }
-
-                        override fun onCancelled(error: DatabaseError) {
-                            // Handle error
-                        }
-                    })
-            } catch (e: Exception) {
-                // Handle error
-            }
-        }
-    }
-
-    fun addWorkout(sessionId: String, name: String) {
+    fun addExercise(sessionId: String, name: String) {
         viewModelScope.launch {
             try {
                 val userId = auth.currentUser?.uid ?: return@launch
@@ -87,7 +63,7 @@ class WorkoutViewModel : ViewModel() {
         }
     }
 
-    fun updateWorkoutName(sessionId: String, workoutId: String, newName: String) {
+    fun updateExerciseName(sessionId: String, workoutId: String, newName: String) {
         viewModelScope.launch {
             try {
                 val userId = auth.currentUser?.uid ?: return@launch
@@ -99,7 +75,7 @@ class WorkoutViewModel : ViewModel() {
         }
     }
 
-    fun deleteWorkout(sessionId: String, workoutId: String) {
+    fun deleteExerciese(sessionId: String, workoutId: String) {
         viewModelScope.launch {
             try {
                 val userId = auth.currentUser?.uid ?: return@launch

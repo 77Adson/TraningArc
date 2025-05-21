@@ -3,15 +3,9 @@ package com.example.trainingarc.features.homePage.screens
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -29,14 +23,14 @@ import com.example.trainingarc.features.homePage.screens.buttonsAndCards.EditWor
 import com.example.trainingarc.features.homePage.screens.buttonsAndCards.WorkoutListScreenContent
 import com.example.trainingarc.features.homePage.screens.buttonsAndCards.WorkoutListTopBar
 import com.example.trainingarc.features.homePage.model.Workout
-import com.example.trainingarc.features.homePage.viewmodel.WorkoutViewModel
+import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 import com.example.trainingarc.navigation.Routes
 
 @Composable
 fun WorkoutListScreen(
     sessionId: String,
     navController: NavController,
-    viewModel: WorkoutViewModel = viewModel()
+    viewModel: ExercisesListViewModel = viewModel()
 ) {
     val workouts by viewModel.workouts.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -48,7 +42,7 @@ fun WorkoutListScreen(
 
     LaunchedEffect(sessionId) {
         viewModel.setCurrentSession(sessionId)
-        viewModel.getWorkouts(sessionId)
+        viewModel.getExercisesList(sessionId)
     }
 
     Scaffold(
@@ -89,7 +83,7 @@ fun WorkoutListScreen(
             name = newWorkoutName,
             onNameChange = { newWorkoutName = it },
             onConfirm = {
-                viewModel.addWorkout(sessionId, newWorkoutName)
+                viewModel.addExercise(sessionId, newWorkoutName)
                 newWorkoutName = ""
                 showAddDialog = false
             },
@@ -105,7 +99,7 @@ fun WorkoutListScreen(
             onNameChange = { newWorkoutName = it },
             onConfirm = {
                 currentWorkout?.let { workout ->
-                    viewModel.updateWorkoutName(sessionId, workout.id, newWorkoutName)
+                    viewModel.updateExerciseName(sessionId, workout.id, newWorkoutName)
                 }
                 showEditDialog = false
             },
@@ -118,7 +112,7 @@ fun WorkoutListScreen(
         DeleteWorkoutDialog(
             onConfirm = {
                 currentWorkout?.let { workout ->
-                    viewModel.deleteWorkout(sessionId, workout.id)
+                    viewModel.deleteExerciese(sessionId, workout.id)
                 }
                 showDeleteConfirm = false
             },
