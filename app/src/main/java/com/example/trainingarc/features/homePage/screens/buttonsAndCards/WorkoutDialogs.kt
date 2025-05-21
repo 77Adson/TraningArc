@@ -1,4 +1,4 @@
-package com.example.trainingarc.features.components.buttonsAndCards
+package com.example.trainingarc.features.homePage.screens.buttonsAndCards
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
