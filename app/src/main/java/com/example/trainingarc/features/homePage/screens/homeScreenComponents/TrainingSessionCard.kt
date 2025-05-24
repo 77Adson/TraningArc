@@ -1,6 +1,5 @@
-package com.example.trainingarc.features.homePage.screens.buttonsAndCards
+package com.example.trainingarc.features.homePage.screens.homeScreenComponents
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.trainingarc.features.homePage.model.TrainingSession
+import com.example.trainingarc.ui.theme.sizes
 
 @Composable
 fun TrainingSessionCard(
@@ -29,7 +29,7 @@ fun TrainingSessionCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(80.dp)
+            .height(MaterialTheme.sizes.components.cardHeight)
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface

@@ -1,10 +1,6 @@
 package com.example.trainingarc.features.homePage.screens
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -16,13 +12,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.trainingarc.features.homePage.screens.buttonsAndCards.AddWorkoutDialog
-import com.example.trainingarc.features.homePage.screens.buttonsAndCards.DeleteSessionDialog
-import com.example.trainingarc.features.homePage.screens.buttonsAndCards.DeleteWorkoutDialog
-import com.example.trainingarc.features.homePage.screens.buttonsAndCards.EditWorkoutDialog
-import com.example.trainingarc.features.homePage.screens.buttonsAndCards.WorkoutListScreenContent
-import com.example.trainingarc.features.homePage.screens.buttonsAndCards.WorkoutListTopBar
 import com.example.trainingarc.features.homePage.model.Workout
+import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.AddWorkoutDialog
+import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.DeleteSessionDialog
+import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.DeleteWorkoutDialog
+import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.EditWorkoutDialog
+import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.FloatingAddButton
+import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.WorkoutListScreenContent
+import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.WorkoutListTopBar
 import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 import com.example.trainingarc.navigation.Routes
 
@@ -53,11 +50,11 @@ fun WorkoutListScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddDialog = true }
-            ) {
-                Icon(Icons.Default.Add, "Add Workout")
-            }
+            FloatingAddButton(
+                onPrimaryClick = { /* Toggle visibility */ },
+                onCreateClick = { showAddDialog = true },
+                onAddExistingClick = { /* Handle existing */ }
+            )
         }
     ) { innerPadding ->
         WorkoutListScreenContent(
@@ -91,7 +88,6 @@ fun WorkoutListScreen(
         )
     }
 
-    // Similar dialog handling for edit/delete
     // Edit Workout Dialog
     if (showEditDialog && currentWorkout != null) {
         EditWorkoutDialog(

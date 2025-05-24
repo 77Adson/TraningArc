@@ -1,4 +1,4 @@
-package com.example.trainingarc.features.homePage.screens.buttonsAndCards
+package com.example.trainingarc.features.homePage.screens.homeScreenComponents
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -15,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.trainingarc.ui.theme.sizes
 
 // features/homePage/components/AddSessionButton.kt
 @Composable
@@ -26,7 +28,7 @@ fun AddSessionButton(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
-            .height(80.dp),
+            .height(MaterialTheme.sizes.components.cardHeight),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary
