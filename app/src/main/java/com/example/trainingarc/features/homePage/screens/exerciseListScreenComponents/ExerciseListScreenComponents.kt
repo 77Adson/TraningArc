@@ -1,4 +1,4 @@
-package com.example.trainingarc.features.homePage.screens.buttonsAndCards
+package com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

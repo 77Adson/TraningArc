@@ -1,4 +1,4 @@
-package com.example.trainingarc.features.homePage.screens.buttonsAndCards
+package com.example.trainingarc.features.homePage.screens.homeScreenComponents
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row

@@ -30,11 +30,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.trainingarc.features.components.LoadingIndicator
-import com.example.trainingarc.features.homePage.screens.buttonsAndCards.TrainingSessionCard
+import com.example.trainingarc.features.homePage.screens.homeScreenComponents.TrainingSessionCard
 import com.example.trainingarc.features.homePage.model.TrainingSession
 import com.example.trainingarc.features.homePage.viewmodel.HomeViewModel
 import com.example.trainingarc.navigation.Routes
-import com.example.trainingarc.features.homePage.screens.buttonsAndCards.AddSessionButton
+import com.example.trainingarc.features.homePage.screens.homeScreenComponents.AddSessionButton
 
 @Composable
 fun HomeScreen(
