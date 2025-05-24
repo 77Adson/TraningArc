@@ -22,7 +22,9 @@ private val DarkColorScheme = darkColorScheme(
     onSecondary = Isabelline,
     onTertiary = Isabelline,
     onBackground = Isabelline,
-    onSurface = Isabelline
+    onSurface = Isabelline,
+    error = Rust,
+    onError = Gunmetal
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -61,7 +63,10 @@ data class AppSizes(
 
     data class Components(
         val buttonHeight: Dp = 48.dp,
-        val navBarHeight: Dp = 64.dp
+        val navBarHeight: Dp = 64.dp,
+        val cardHeight: Dp = 80.dp,
+        val smallCardHeight: Dp = 60.dp,
+        val cardWidth: Dp = 160.dp
     )
 }
 

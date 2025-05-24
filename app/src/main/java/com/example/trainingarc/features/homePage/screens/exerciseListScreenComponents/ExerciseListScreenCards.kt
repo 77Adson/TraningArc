@@ -1,15 +1,17 @@
 package com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.example.trainingarc.features.homePage.model.Workout
+import com.example.trainingarc.ui.theme.sizes
 
 @Composable
 fun WorkoutListScreenContent(
@@ -50,13 +52,19 @@ private fun WorkoutList(
     onDeleteClick: (Workout) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var expandedWorkoutId by remember { mutableStateOf<String?>(null) }
+
     Column(modifier = modifier) {
         workouts.forEach { workout ->
             WorkoutListItem(
                 workout = workout,
+                isExpanded = workout.id == expandedWorkoutId,
                 onWorkoutClick = { onWorkoutClick(workout.id) },
                 onEditClick = { onEditClick(workout) },
-                onDeleteClick = { onDeleteClick(workout) }
+                onDeleteClick = { onDeleteClick(workout) },
+                onExpandChange = { shouldExpand ->
+                    expandedWorkoutId = if (shouldExpand) workout.id else null
+                }
             )
         }
     }
@@ -65,25 +73,40 @@ private fun WorkoutList(
 @Composable
 fun WorkoutListItem(
     workout: Workout,
+    isExpanded: Boolean,
     onWorkoutClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    onExpandChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val containerColor = if (isExpanded)
+    {
+        MaterialTheme.colorScheme.primary
+    }else{
+        MaterialTheme.colorScheme.surface
+    }
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .height(MaterialTheme.sizes.components.smallCardHeight)
+            .padding(vertical = 4.dp)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { onWorkoutClick() },
+                    onLongPress = { onExpandChange(true) }
+                )
+            },
+
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = containerColor
         )
     ) {
         WorkoutListItemContent(
             name = workout.name,
-            onWorkoutClick = onWorkoutClick,
-            onDetailsClick = onWorkoutClick,
-            onEditClick = onEditClick,
-            onDeleteClick = onDeleteClick
+            showActions = isExpanded,
+            onEditClick = { onExpandChange(false); onEditClick() },
+            onDeleteClick = { onExpandChange(false); onDeleteClick() }
         )
     }
 }
@@ -91,55 +114,52 @@ fun WorkoutListItem(
 @Composable
 private fun WorkoutListItemContent(
     name: String,
-    onWorkoutClick: () -> Unit,
-    onDetailsClick: () -> Unit,
+    showActions: Boolean,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.padding(8.dp)
+        modifier = modifier
+            .padding(8.dp)
+            .fillMaxWidth()
+            .fillMaxHeight()
     ) {
         WorkoutName(
             name = name,
-            onClick = onWorkoutClick,
             modifier = Modifier.weight(1f)
         )
-        WorkoutActions(
-            onDetailsClick = onWorkoutClick,
-            onEditClick = onEditClick,
-            onDeleteClick = onDeleteClick
-        )
+
+        if (showActions) {
+            WorkoutActions(
+                onEditClick = onEditClick,
+                onDeleteClick = onDeleteClick
+            )
+        }
     }
 }
 
 @Composable
 private fun WorkoutName(
     name: String,
-    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Text(
         text = name,
         modifier = modifier
-            .padding(start = 8.dp)
-            .clickable(onClick = onClick),
+            .padding(start = 8.dp),
         style = MaterialTheme.typography.titleMedium
     )
 }
 
 @Composable
 private fun WorkoutActions(
-    onDetailsClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(modifier = modifier) {
-        IconButton(onClick = onDetailsClick) {
-            Icon(Icons.Default.Details, "Details")
-        }
         IconButton(onClick = onEditClick) {
             Icon(Icons.Default.Edit, "Edit")
         }

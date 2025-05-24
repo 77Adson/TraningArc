@@ -84,11 +84,7 @@ fun HomeScreen(
                             session = session,
                             onClick = {
                                 navController.navigate(Routes.WorkoutList.createRoute(session.sessionId))
-                            },
-//                            onDelete = {
-//                                currentSession = session
-//                                showDeleteDialog = true
-//                            }
+                            }
                         )
                     }
                     item {
