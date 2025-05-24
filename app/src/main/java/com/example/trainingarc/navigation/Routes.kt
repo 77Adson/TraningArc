@@ -1,8 +1,6 @@
 package com.example.trainingarc.navigation
 
-// navigation/Routes.kt
 sealed class Routes(val route: String) {
-
     // Auth navigation
     data object Login : Routes("login")
     data object Register : Routes("register")
@@ -14,24 +12,24 @@ sealed class Routes(val route: String) {
     data object Profile : Routes("profile")
 
     data object SessionDetail : Routes("sessionDetail/{sessionId}") {
-        fun createRoute(sessionId: String): String {
-            return "sessionDetail/$sessionId"
-        }
+        fun createRoute(sessionId: String) = "sessionDetail/$sessionId"
     }
 
     data object WorkoutList : Routes("workoutList/{sessionId}") {
-        fun createRoute(sessionId: String): String = "workoutList/$sessionId"
+        fun createRoute(sessionId: String) = "workoutList/$sessionId"
     }
 
-    data object WorkoutDetail : Routes("workoutDetail/{workoutId}") {
-        fun createRoute(workoutId: String) = "workoutDetail/$workoutId"
+    data object ExerciseDetail : Routes("exerciseDetail/{exerciseId}") {
+        fun createRoute(exerciseId: String) = "exerciseDetail/$exerciseId"
+    }
+
+    data object ProgressChart : Routes("progressChart/{exerciseId}") {
+        fun createRoute(exerciseId: String) = "progressChart/$exerciseId"
     }
 
     companion object {
         // Helper list of all bottom nav screens
         private val bottomNavItems = listOf(Home, Friends, Settings, Profile)
-
-        // List of just the route strings for easy checking
         val bottomNavRoutes = bottomNavItems.map { it.route }
     }
 }

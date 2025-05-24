@@ -16,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavOptions
 import com.example.trainingarc.features.homePage.screens.buttonsAndCards.AddWorkoutDialog
 import com.example.trainingarc.features.homePage.screens.buttonsAndCards.DeleteSessionDialog
 import com.example.trainingarc.features.homePage.screens.buttonsAndCards.DeleteWorkoutDialog
@@ -63,7 +64,13 @@ fun WorkoutListScreen(
         WorkoutListScreenContent(
             workouts = workouts,
             onWorkoutClick = { workoutId ->
-                navController.navigate(Routes.WorkoutDetail.createRoute(workoutId))
+                // Poprawione wywołanie navigate
+                navController.navigate(
+                    route = Routes.ExerciseDetail.createRoute(workoutId),
+                    navOptions = NavOptions.Builder()
+                        .setLaunchSingleTop(true)
+                        .build()
+                )
             },
             onEditClick = { workout ->
                 currentWorkout = workout
@@ -91,7 +98,6 @@ fun WorkoutListScreen(
         )
     }
 
-    // Similar dialog handling for edit/delete
     // Edit Workout Dialog
     if (showEditDialog && currentWorkout != null) {
         EditWorkoutDialog(
@@ -129,7 +135,6 @@ fun WorkoutListScreen(
                         navController.popBackStack()
                     },
                     onFailure = { e ->
-                        // Handle error (show snackbar or log)
                         showDeleteSessionConfirm = false
                     }
                 )

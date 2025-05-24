@@ -10,7 +10,34 @@ data class Workout(
     val name: String = ""
 )
 
-data class WorkoutDetail(
+data class ExerciseDetail(
     val workoutId: String = "",
-    val description: String = ""
-)
+    val name: String = "",
+    val weight: Double = 0.0,
+    val reps: Int = 0,
+    val sets: Int = 0,
+    val notes: String? = null,
+    val history: Map<String, ExerciseHistoryEntry> = emptyMap()
+) {
+    fun getHistoryList(): List<ExerciseHistoryEntry> = history.values.toList()
+}
+
+data class ExerciseHistoryEntry(
+    val timestamp: Long = System.currentTimeMillis(),
+    val weight: Double,
+    val reps: Int,
+    val sets: Int,
+    val notes: String? = null
+) {
+    val score: Double get() = weight * reps * sets
+}
+
+fun ExerciseHistoryEntry.toMap(): Map<String, Any> {
+    return mapOf(
+        "timestamp" to timestamp,
+        "weight" to weight,
+        "reps" to reps,
+        "sets" to sets,
+        "notes" to (notes ?: "")
+    )
+}
