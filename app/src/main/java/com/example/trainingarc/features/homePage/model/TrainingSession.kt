@@ -23,7 +23,7 @@ data class ExerciseDetail(
 }
 
 data class ExerciseHistoryEntry(
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Long = 0L,
     val weight: Double,
     val reps: Int,
     val sets: Int,

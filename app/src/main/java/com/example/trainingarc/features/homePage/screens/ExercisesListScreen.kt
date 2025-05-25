@@ -1,5 +1,6 @@
 package com.example.trainingarc.features.homePage.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -26,6 +27,7 @@ import com.example.trainingarc.features.homePage.screens.buttonsAndCards.Workout
 import com.example.trainingarc.features.homePage.model.Workout
 import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 import com.example.trainingarc.navigation.Routes
+
 
 @Composable
 fun WorkoutListScreen(
@@ -63,13 +65,12 @@ fun WorkoutListScreen(
     ) { innerPadding ->
         WorkoutListScreenContent(
             workouts = workouts,
-            onWorkoutClick = { workoutId ->
-                // Poprawione wywołanie navigate
+            onWorkoutClick = { workout: com.example.trainingarc.features.homePage.model.Workout ->
                 navController.navigate(
-                    route = Routes.ExerciseDetail.createRoute(workoutId),
-                    navOptions = NavOptions.Builder()
-                        .setLaunchSingleTop(true)
-                        .build()
+                    Routes.ExerciseDetail.createRoute(
+                        sessionId = sessionId,
+                        exerciseId = workout.id
+                    )
                 )
             },
             onEditClick = { workout ->

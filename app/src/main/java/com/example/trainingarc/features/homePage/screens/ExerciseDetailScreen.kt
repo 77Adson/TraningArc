@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 import com.example.trainingarc.navigation.Routes
 import kotlinx.coroutines.launch
 
@@ -28,6 +29,7 @@ import kotlinx.coroutines.launch
 fun ExerciseDetailScreen(
     workoutId: String,
     navController: NavController,
+    sessionId: String,
     viewModel: ExerciseViewModel = viewModel()
 ) {
     val detailState by viewModel.detail.collectAsState()
@@ -37,12 +39,11 @@ fun ExerciseDetailScreen(
     var notes by remember { mutableStateOf("") }
     var isEditing by remember { mutableStateOf(false) }
 
-    // Dodane deklaracje dla Snackbar i CoroutineScope
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(workoutId) {
-        viewModel.getDetail(workoutId)
+    LaunchedEffect(workoutId, sessionId) {
+        viewModel.getDetail(sessionId, workoutId)
     }
 
     LaunchedEffect(detailState) {
@@ -70,7 +71,7 @@ fun ExerciseDetailScreen(
                 },
                 actions = {
                     IconButton(onClick = {
-                        // Zamiast ręcznego stringa
+
                         navController.navigate(Routes.ProgressChart.createRoute(detailState?.workoutId ?: ""))
                     }) {
                         Icon(Icons.Default.ShowChart, contentDescription = "Progress Chart")
@@ -185,8 +186,14 @@ fun ExerciseDetailScreen(
                                 val weightValue = weight.toDoubleOrNull() ?: 0.0
                                 val repsValue = reps.toIntOrNull() ?: 0
                                 val setsValue = sets.toIntOrNull() ?: 0
+                                val entry = ExerciseHistoryEntry(
+                                    weight = weightValue,
+                                    reps = repsValue,
+                                    sets = setsValue,
+                                    notes = notes.takeIf { it.isNotBlank() }
+                                )
 
-                                // Dodaj lepszą walidację
+                                // Walidacja
                                 if (weightValue <= 0) {
                                     snackbarHostState.showSnackbar("Waga musi być większa od zera")
                                     return@launch
@@ -200,22 +207,18 @@ fun ExerciseDetailScreen(
                                     return@launch
                                 }
 
-                                val entry = ExerciseHistoryEntry(
-                                    weight = weightValue,
-                                    reps = repsValue,
-                                    sets = setsValue,
-                                    notes = notes.takeIf { it.isNotBlank() }
-                                )
+                                if (sessionId != null) {
+                                    viewModel.addProgressEntry(sessionId!!, entry)
+                                    snackbarHostState.showSnackbar("Dodano wynik: ${entry.score.toInt()}")
 
-                                viewModel.addProgressEntry(entry)
-                                snackbarHostState.showSnackbar("Dodano wynik: ${entry.score.toInt()}")
-
-                                // Resetuj pola po dodaniu
-                                weight = ""
-                                reps = ""
-                                sets = ""
-                                notes = ""
-
+                                    // Resetuj pola po dodaniu
+                                    weight = ""
+                                    reps = ""
+                                    sets = ""
+                                    notes = ""
+                                } else {
+                                    snackbarHostState.showSnackbar("Błąd: brak sesji")
+                                }
                             } catch (e: Exception) {
                                 snackbarHostState.showSnackbar("Błąd: ${e.localizedMessage ?: "Nieznany błąd"}")
                                 Log.e("ExerciseDetail", "Error adding entry", e)

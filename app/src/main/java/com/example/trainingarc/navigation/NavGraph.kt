@@ -3,7 +3,9 @@ package com.example.trainingarc.navigation
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,6 +26,7 @@ import com.example.trainingarc.features.homePage.screens.ExerciseDetailScreen
 import com.example.trainingarc.features.homePage.screens.HomeScreen
 import com.example.trainingarc.features.homePage.screens.ProgressChartScreen
 import com.example.trainingarc.features.homePage.screens.WorkoutListScreen
+import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 import com.example.trainingarc.features.profilePage.screens.ProfileScreen
 import com.example.trainingarc.features.settingsPage.screen.SettingsScreen
 
@@ -110,15 +113,18 @@ fun NavGraph(
 
             composable(
                 route = Routes.ExerciseDetail.route,
-                arguments = listOf(navArgument("exerciseId") {
-                    type = NavType.StringType
-                })
+                arguments = listOf(
+                    navArgument("exerciseId") { type = NavType.StringType },
+                    navArgument("sessionId") { type = NavType.StringType } // Dodajemy sessionId jako parametr
+                )
             ) { backStackEntry ->
-                val exerciseId = backStackEntry.arguments?.getString("exerciseId")
-                    ?: return@composable
+                val exerciseId = backStackEntry.arguments?.getString("exerciseId") ?: return@composable
+                val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
+
                 ExerciseDetailScreen(
                     workoutId = exerciseId,
-                    navController = navController
+                    navController = navController,
+                    sessionId = sessionId
                 )
             }
 
@@ -128,15 +134,17 @@ fun NavGraph(
                     type = NavType.StringType
                 })
             ) { backStackEntry ->
-                val exerciseId = backStackEntry.arguments?.getString("exerciseId")
-                    ?: run {
-                        navController.popBackStack()
-                        return@composable
-                    }
+                val exerciseId = backStackEntry.arguments?.getString("exerciseId") ?: run {
+                    navController.popBackStack()
+                    return@composable
+                }
+
+                val exercisesListViewModel: ExercisesListViewModel = viewModel()
 
                 ProgressChartScreen(
                     exerciseId = exerciseId,
-                    navController = navController
+                    navController = navController,
+                    exercisesListViewModel = exercisesListViewModel
                 )
             }
         }

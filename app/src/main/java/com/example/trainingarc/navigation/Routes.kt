@@ -19,8 +19,9 @@ sealed class Routes(val route: String) {
         fun createRoute(sessionId: String) = "workoutList/$sessionId"
     }
 
-    data object ExerciseDetail : Routes("exerciseDetail/{exerciseId}") {
-        fun createRoute(exerciseId: String) = "exerciseDetail/$exerciseId"
+    data object ExerciseDetail : Routes("exerciseDetail/{sessionId}/{exerciseId}") {
+        fun createRoute(sessionId: String, exerciseId: String) =
+            "exerciseDetail/$sessionId/$exerciseId"
     }
 
     data object ProgressChart : Routes("progressChart/{exerciseId}") {

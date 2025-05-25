@@ -26,25 +26,29 @@ import androidx.compose.ui.platform.LocalDensity
 import java.util.Locale
 import kotlin.math.max
 import androidx.compose.material.icons.filled.ArrowBack
+import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProgressChartScreen(
-    exerciseId: String,  // This is now used in LaunchedEffect
+    exerciseId: String,
     navController: NavController,
-    viewModel: ExerciseViewModel = viewModel()
+    viewModel: ExerciseViewModel = viewModel(),
+    exercisesListViewModel: ExercisesListViewModel = viewModel() // Dodajemy nowy ViewModel
 ) {
     val detailState by viewModel.detail.collectAsState()
+    val sessionId by exercisesListViewModel.currentSessionId.collectAsState()
     val density = LocalDensity.current
 
-    // Add this to load data when screen opens
-    LaunchedEffect(exerciseId) {
-        viewModel.getDetail(exerciseId)
+    LaunchedEffect(exerciseId, sessionId) {
+        if (sessionId != null) {
+            viewModel.getDetail(sessionId!!, exerciseId) // Używamy poprawnej metody
+        }
     }
 
     Scaffold(
         topBar = {
-            TopAppBar( // Now properly opted-in
+            TopAppBar(
                 title = { Text("Progress Chart") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {

@@ -9,7 +9,9 @@ import com.example.trainingarc.features.homePage.model.toMap
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ServerValue
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,14 +21,23 @@ import java.util.*
 
 class ExerciseViewModel : ViewModel() {
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-    private val database = FirebaseDatabase.getInstance().reference
+    private val database: DatabaseReference = FirebaseDatabase.getInstance().reference
 
     private val _detail = MutableStateFlow<ExerciseDetail?>(null)
     val detail: StateFlow<ExerciseDetail?> = _detail.asStateFlow()
 
-    fun getDetail(exerciseId: String) {
+    fun getDetail(sessionId: String, exerciseId: String) {
         val userId = auth.currentUser?.uid ?: return
-        val ref = database.child("users").child(userId).child("exercises").child(exerciseId)
+
+        val ref = database.child("users")
+            .child(userId)
+            .child("sessions")
+            .child(sessionId)
+            .child("workouts")
+            .child(exerciseId)
+
+        // Zmienione logowanie - ręczne budowanie ścieżki zamiast ref.path
+        Log.d("ExerciseVM", "Loading from: users/$userId/sessions/$sessionId/workouts/$exerciseId")
 
         ref.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -54,7 +65,7 @@ class ExerciseViewModel : ViewModel() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e("ExerciseVM", "Database error: ${error.message}")
+                Log.e("ExerciseVM", "Database error", error.toException())
             }
         })
     }
@@ -65,7 +76,7 @@ class ExerciseViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                // Przygotuj mapę wartości do aktualizacji
+
                 val updates = hashMapOf<String, Any>(
                     "name" to detail.name,
                     "weight" to detail.weight,
@@ -74,10 +85,8 @@ class ExerciseViewModel : ViewModel() {
                     "notes" to (detail.notes ?: "")
                 )
 
-                // Wykonaj aktualizację
                 ref.updateChildren(updates)
                     .addOnSuccessListener {
-                        // Aktualizuj lokalny stan, zachowując historię
                         _detail.value = _detail.value?.copy(
                             name = detail.name,
                             weight = detail.weight,
@@ -95,66 +104,39 @@ class ExerciseViewModel : ViewModel() {
         }
     }
 
-    fun addProgressEntry(entry: ExerciseHistoryEntry) {
-        viewModelScope.launch {
-            try {
-                val currentDetail = _detail.value ?: run {
-                    Log.e("ExerciseVM", "No current detail")
-                    return@launch
+    fun addProgressEntry(sessionId: String, entry: ExerciseHistoryEntry) {
+        val userId = auth.currentUser?.uid ?: return
+        val currentDetail = _detail.value ?: return
+
+        val newHistoryKey = database.child("history").push().key ?: return
+
+        val historyData = hashMapOf<String, Any>(
+            "timestamp" to ServerValue.TIMESTAMP,
+            "weight" to entry.weight,
+            "reps" to entry.reps,
+            "sets" to entry.sets,
+            "notes" to (entry.notes ?: "")
+        )
+
+        val historyRef = database
+            .child("users")
+            .child(userId)
+            .child("sessions")
+            .child(sessionId)
+            .child("workouts")
+            .child(currentDetail.workoutId)
+            .child("history")
+            .child(newHistoryKey)
+
+        historyRef.setValue(historyData)
+            .addOnSuccessListener {
+                val updatedHistory = currentDetail.history.toMutableMap().apply {
+                    put(newHistoryKey, entry.copy(timestamp = System.currentTimeMillis()))
                 }
-
-                val userId = auth.currentUser?.uid ?: run {
-                    Log.e("ExerciseVM", "User not authenticated")
-                    return@launch
-                }
-
-                // 1. Najpierw aktualizuj główne dane ćwiczenia
-                val exerciseUpdate = mapOf(
-                    "weight" to entry.weight,
-                    "reps" to entry.reps,
-                    "sets" to entry.sets,
-                    "notes" to (entry.notes ?: "")
-                )
-
-                // 2. Przygotuj nowy wpis historii
-                val newHistoryKey = database.child("history").push().key ?: run {
-                    Log.e("ExerciseVM", "Couldn't generate key")
-                    return@launch
-                }
-
-                val historyUpdate = mapOf(
-                    "timestamp" to entry.timestamp,
-                    "weight" to entry.weight,
-                    "reps" to entry.reps,
-                    "sets" to entry.sets,
-                    "notes" to (entry.notes ?: "")
-                )
-
-                // 3. Przygotuj pełną aktualizację
-                val updates = hashMapOf<String, Any>(
-                    "users/$userId/exercises/${currentDetail.workoutId}" to exerciseUpdate,
-                    "users/$userId/exercises/${currentDetail.workoutId}/history/$newHistoryKey" to historyUpdate
-                )
-
-                // 4. Wykonaj atomową aktualizację
-                database.updateChildren(updates)
-                    .addOnSuccessListener {
-                        // Aktualizuj lokalny stan
-                        _detail.value = currentDetail.copy(
-                            weight = entry.weight,
-                            reps = entry.reps,
-                            sets = entry.sets,
-                            notes = entry.notes,
-                            history = currentDetail.history + (newHistoryKey to entry)
-                        )
-                        Log.d("ExerciseVM", "Successfully saved to Firebase")
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e("ExerciseVM", "Failed to save", e)
-                    }
-            } catch (e: Exception) {
-                Log.e("ExerciseVM", "Error", e)
+                _detail.value = currentDetail.copy(history = updatedHistory)
             }
-        }
+            .addOnFailureListener { e ->
+                Log.e("ExerciseVM", "Failed to save history", e)
+            }
     }
 }
