@@ -7,7 +7,8 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import com.example.trainingarc.features.homePage.model.Workout
+import com.example.trainingarc.features.homePage.model.Exercise
+import com.example.trainingarc.features.homePage.model.TrainingSession
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,22 +17,48 @@ import kotlinx.coroutines.launch
 class ExercisesListViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance().reference
-    private val _workouts = MutableStateFlow<List<Workout>>(emptyList())
-    val workouts: StateFlow<List<Workout>> = _workouts.asStateFlow()
-    private val _currentSessionId = MutableStateFlow<String?>(null)
-    val currentSessionId: StateFlow<String?> = _currentSessionId.asStateFlow()
 
-    fun getExercisesList(sessionId: String) {
+    private val _exercises = MutableStateFlow<List<Exercise>>(emptyList())
+    val exercises: StateFlow<List<Exercise>> = _exercises.asStateFlow()
+
+    private val _currentSession = MutableStateFlow<TrainingSession?>(null)
+    val currentSession: StateFlow<TrainingSession?> = _currentSession.asStateFlow()
+
+    // Get all exercises for a session
+    fun getExercisesForSession(sessionId: String) {
         viewModelScope.launch {
             try {
                 val userId = auth.currentUser?.uid ?: return@launch
-                database.child("users/$userId/sessions/$sessionId/workouts")
-                    .addValueEventListener(object : ValueEventListener {
-                        override fun onDataChange(snapshot: DataSnapshot) {
-                            val workoutsList = snapshot.children.mapNotNull { child ->
-                                child.getValue(Workout::class.java)
-                            }
-                            _workouts.value = workoutsList
+
+                // First get the session to find which exercises it contains
+                database.child("users/$userId/sessions/$sessionId")
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(sessionSnapshot: DataSnapshot) {
+                            val session = sessionSnapshot.getValue(TrainingSession::class.java) ?: return
+                            _currentSession.value = session
+
+                            // Then get all exercises for this user
+                            database.child("users/$userId/exercises")
+                                .addListenerForSingleValueEvent(object : ValueEventListener {
+                                    override fun onDataChange(exercisesSnapshot: DataSnapshot) {
+                                        val allExercises = exercisesSnapshot.children.mapNotNull {
+                                            it.getValue(Exercise::class.java)
+                                        }
+
+                                        // Filter to only include exercises in this session
+                                        val sessionExercises = allExercises.filter { exercise ->
+                                            session.sessionExercises.containsKey(exercise.exerciseId)
+                                        }.sortedBy { exercise ->
+                                            session.sessionExercises[exercise.exerciseId]
+                                        }
+
+                                        _exercises.value = sessionExercises
+                                    }
+
+                                    override fun onCancelled(error: DatabaseError) {
+                                        // Handle error
+                                    }
+                                })
                         }
 
                         override fun onCancelled(error: DatabaseError) {
@@ -44,74 +71,95 @@ class ExercisesListViewModel : ViewModel() {
         }
     }
 
-    fun addExercise(sessionId: String, name: String) {
+    // Add a new exercise to both the exercises list and the session
+    fun addExercise(sessionId: String, exercise: Exercise) {
         viewModelScope.launch {
             try {
                 val userId = auth.currentUser?.uid ?: return@launch
-                val workoutId = database.child("workouts").push().key ?: return@launch
+                val exerciseId = database.child("exercises").push().key ?: return@launch
 
-                val newWorkout = Workout(
-                    id = workoutId,
-                    name = name
-                )
+                // Add to general exercises collection
+                database.child("users/$userId/exercises/$exerciseId")
+                    .setValue(exercise.copy(exerciseId = exerciseId))
 
-                database.child("users/$userId/sessions/$sessionId/workouts/$workoutId")
-                    .setValue(newWorkout)
+                // Add reference to session with order
+                val order = (_currentSession.value?.sessionExercises?.size ?: 0) + 1
+                database.child("users/$userId/sessions/$sessionId/sessionExercises/$exerciseId")
+                    .setValue(order)
+
+                // Update local session data
+                _currentSession.value?.let { current ->
+                    val updatedExercises = current.sessionExercises.toMutableMap()
+                    updatedExercises[exerciseId] = order
+                    _currentSession.value = current.copy(sessionExercises = updatedExercises)
+                }
             } catch (e: Exception) {
                 // Handle error
             }
         }
     }
 
-    fun updateExerciseName(sessionId: String, workoutId: String, newName: String) {
+    // Update an exercise
+    fun updateExercise(exercise: Exercise) {
         viewModelScope.launch {
             try {
                 val userId = auth.currentUser?.uid ?: return@launch
-                database.child("users/$userId/sessions/$sessionId/workouts/$workoutId/name")
-                    .setValue(newName)
+                database.child("users/$userId/exercises/${exercise.exerciseId}")
+                    .setValue(exercise)
             } catch (e: Exception) {
                 // Handle error
             }
         }
     }
 
-    fun deleteExerciese(sessionId: String, workoutId: String) {
+    // Delete an exercise (from both exercises collection and all sessions)
+    fun deleteExercise(exerciseId: String) {
         viewModelScope.launch {
             try {
                 val userId = auth.currentUser?.uid ?: return@launch
-                database.child("users/$userId/sessions/$sessionId/workouts/$workoutId")
+
+                // Delete from exercises collection
+                database.child("users/$userId/exercises/$exerciseId")
                     .removeValue()
-            } catch (e: Exception) {
-                // Handle error
-            }
-        }
-    }
 
-    fun setCurrentSession(sessionId: String) {
-        _currentSessionId.value = sessionId
-    }
-
-    fun deleteCurrentSession(onSuccess: () -> Unit = {}, onFailure: (Exception) -> Unit = {}) {
-        viewModelScope.launch {
-            try {
-                val userId = auth.currentUser?.uid ?: return@launch
-                val sessionId = _currentSessionId.value ?: return@launch
-
-                // First delete all workouts in this session
-                database.child("users/$userId/sessions/$sessionId/workouts")
-                    .removeValue()
-                    .addOnSuccessListener {
-                        // Then delete the session itself
-                        database.child("users/$userId/sessions/$sessionId")
-                            .removeValue()
-                            .addOnSuccessListener { onSuccess() }
-                            .addOnFailureListener { e ->
-                                onFailure(Exception("Failed to delete session", e))
+                // Delete from all sessions (you might want to add a transaction here)
+                database.child("users/$userId/sessions")
+                    .addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(snapshot: DataSnapshot) {
+                            snapshot.children.forEach { sessionSnapshot ->
+                                val sessionId = sessionSnapshot.key ?: return@forEach
+                                database.child("users/$userId/sessions/$sessionId/sessionExercises/$exerciseId")
+                                    .removeValue()
                             }
-                    }
-                    .addOnFailureListener { e ->
-                        onFailure(Exception("Failed to delete workouts", e))
-                    }
+                        }
+
+                        override fun onCancelled(error: DatabaseError) {
+                            // Handle error
+                        }
+                    })
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
+    fun deleteCurrentSession(onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val userId = auth.currentUser?.uid ?: return@launch
+                val sessionId = currentSession.value?.sessionId ?: return@launch
+
+                // Delete all exercises in this session first
+                currentSession.value?.sessionExercises?.keys?.forEach { exerciseId ->
+                    database.child("users/$userId/sessions/$sessionId/sessionExercises/$exerciseId")
+                        .removeValue()
+                }
+
+                // Then delete the session itself
+                database.child("users/$userId/sessions/$sessionId")
+                    .removeValue()
+                    .addOnSuccessListener { onSuccess() }
+                    .addOnFailureListener { e -> onFailure(Exception(e)) }
             } catch (e: Exception) {
                 onFailure(e)
             }

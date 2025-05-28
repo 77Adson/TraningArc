@@ -1,16 +1,17 @@
+// TrainingData.kt
 package com.example.trainingarc.features.homePage.model
 
 data class TrainingSession(
     val sessionId: String = "",
-    val sessionName: String = ""
+    val sessionName: String = "",
+    val sessionExercises: Map<String, Int> = emptyMap() // exerciseId to order
 )
 
-data class Workout(
-    val id: String = "",
-    val name: String = ""
-)
-
-data class WorkoutDetail(
-    val workoutId: String = "",
+data class Exercise(
+    val exerciseId: String = "",
+    val exerciseName: String = "",
+    val weight: Float = 0f,
+    val reps: Int = 0,
+    val sets: Int = 0,
     val description: String = ""
 )

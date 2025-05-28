@@ -12,7 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.trainingarc.features.homePage.model.Workout
+import com.example.trainingarc.features.homePage.model.Exercise
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.AddWorkoutDialog
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.DeleteSessionDialog
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.DeleteWorkoutDialog
@@ -29,17 +29,18 @@ fun WorkoutListScreen(
     navController: NavController,
     viewModel: ExercisesListViewModel = viewModel()
 ) {
-    val workouts by viewModel.workouts.collectAsState()
+    val exercises by viewModel.exercises.collectAsState()
+    val currentSession by viewModel.currentSession.collectAsState()
+
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
-    var currentWorkout by remember { mutableStateOf<Workout?>(null) }
-    var newWorkoutName by remember { mutableStateOf("") }
+    var currentExercise by remember { mutableStateOf<Exercise?>(null) }
+    var newExerciseName by remember { mutableStateOf("") }
     var showDeleteSessionConfirm by remember { mutableStateOf(false) }
 
     LaunchedEffect(sessionId) {
-        viewModel.setCurrentSession(sessionId)
-        viewModel.getExercisesList(sessionId)
+        viewModel.getExercisesForSession(sessionId)
     }
 
     Scaffold(
@@ -58,17 +59,22 @@ fun WorkoutListScreen(
         }
     ) { innerPadding ->
         WorkoutListScreenContent(
-            workouts = workouts,
-            onWorkoutClick = { workoutId ->
-                navController.navigate(Routes.WorkoutDetail.createRoute(workoutId))
+            workouts = exercises, // Directly pass Exercise objects
+            onWorkoutClick = { exerciseId ->
+                navController.navigate(
+                    Routes.WorkoutDetail.createRoute(
+                        sessionId = sessionId,
+                        exerciseId = exerciseId
+                    )
+                )
             },
-            onEditClick = { workout ->
-                currentWorkout = workout
-                newWorkoutName = workout.name
+            onEditClick = { exercise: Exercise -> // Now receives full Exercise
+                currentExercise = exercise
+                newExerciseName = exercise.exerciseName
                 showEditDialog = true
             },
-            onDeleteClick = { workout ->
-                currentWorkout = workout
+            onDeleteClick = { exercise: Exercise -> // Now receives full Exercise
+                currentExercise = exercise
                 showDeleteConfirm = true
             },
             modifier = Modifier.padding(innerPadding)
@@ -77,11 +83,20 @@ fun WorkoutListScreen(
 
     if (showAddDialog) {
         AddWorkoutDialog(
-            name = newWorkoutName,
-            onNameChange = { newWorkoutName = it },
+            name = newExerciseName,
+            onNameChange = { newExerciseName = it },
             onConfirm = {
-                viewModel.addExercise(sessionId, newWorkoutName)
-                newWorkoutName = ""
+                viewModel.addExercise(
+                    sessionId = sessionId,
+                    exercise = Exercise(
+                        exerciseName = newExerciseName,
+                        weight = 0f,
+                        reps = 0,
+                        sets = 0,
+                        description = ""
+                    )
+                )
+                newExerciseName = ""
                 showAddDialog = false
             },
             onDismiss = { showAddDialog = false }
@@ -89,13 +104,15 @@ fun WorkoutListScreen(
     }
 
     // Edit Workout Dialog
-    if (showEditDialog && currentWorkout != null) {
+    if (showEditDialog && currentExercise != null) {
         EditWorkoutDialog(
-            name = newWorkoutName,
-            onNameChange = { newWorkoutName = it },
+            name = newExerciseName,
+            onNameChange = { newExerciseName = it },
             onConfirm = {
-                currentWorkout?.let { workout ->
-                    viewModel.updateExerciseName(sessionId, workout.id, newWorkoutName)
+                currentExercise?.let { exercise ->
+                    viewModel.updateExercise(
+                        exercise.copy(exerciseName = newExerciseName)
+                    )
                 }
                 showEditDialog = false
             },
@@ -104,11 +121,11 @@ fun WorkoutListScreen(
     }
 
     // Delete Confirmation Dialog
-    if (showDeleteConfirm && currentWorkout != null) {
+    if (showDeleteConfirm && currentExercise != null) {
         DeleteWorkoutDialog(
             onConfirm = {
-                currentWorkout?.let { workout ->
-                    viewModel.deleteExerciese(sessionId, workout.id)
+                currentExercise?.let { exercise ->
+                    viewModel.deleteExercise(exercise.exerciseId)
                 }
                 showDeleteConfirm = false
             },

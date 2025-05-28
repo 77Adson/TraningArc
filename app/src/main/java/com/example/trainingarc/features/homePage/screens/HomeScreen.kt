@@ -47,7 +47,7 @@ fun HomeScreen(
     var showDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var newSessionName by remember { mutableStateOf("") }
-    var currentSession by remember { mutableStateOf<TrainingSession?>(null) }
+    val currentSession by remember { mutableStateOf<TrainingSession?>(null) }
     val sessions by homeViewModel.sessions.collectAsState()
     val isLoading by homeViewModel.isLoading.collectAsState()
 

@@ -17,11 +17,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             TrainingArcTheme(
             ) {
-                System.out.println("Current Theme background color: ${MaterialTheme.colorScheme.background}")
+                println("Going to set content")
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    println("Going to NavGraph")
                     NavGraph()
                 }
             }

@@ -2,6 +2,7 @@ package com.example.trainingarc.features.homePage.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -9,35 +10,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.trainingarc.features.homePage.viewmodel.ExerciseViewModel
+import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkoutDetailScreen(
-    workoutId: String,
+    sessionId: String,
+    exerciseId: String,
     navController: NavController,
-    viewModel: ExerciseViewModel = viewModel()
+    viewModel: ExercisesListViewModel = viewModel()
 ) {
-    val detailState by viewModel.detail.collectAsState()
-    var description by remember { mutableStateOf("") }
+    // Get current exercise from the ViewModel's state
+    val exercises by viewModel.exercises.collectAsState()
+    val currentExercise = exercises.find { it.exerciseId == exerciseId }
+
+    // Local state for editing
+    var description by remember { mutableStateOf(currentExercise?.description ?: "") }
     var isEditing by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    LaunchedEffect(workoutId) {
-        viewModel.getDetail(workoutId)
-    }
-
-    LaunchedEffect(detailState) {
-        description = detailState?.description ?: ""
+    // Update local state when exercise changes
+    LaunchedEffect(currentExercise) {
+        description = currentExercise?.description ?: ""
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Workout Details") },
+                title = { Text(currentExercise?.exerciseName ?: "Workout Details") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
             )
@@ -63,7 +66,11 @@ fun WorkoutDetailScreen(
                 Row {
                     Button(
                         onClick = {
-                            viewModel.updateDescription(workoutId, description)
+                            currentExercise?.let { exercise ->
+                                viewModel.updateExercise(
+                                    exercise.copy(description = description)
+                                )
+                            }
                             isEditing = false
                         }
                     ) {
@@ -74,7 +81,7 @@ fun WorkoutDetailScreen(
 
                     OutlinedButton(
                         onClick = {
-                            description = detailState?.description ?: ""
+                            description = currentExercise?.description ?: ""
                             isEditing = false
                         }
                     ) {
@@ -90,9 +97,36 @@ fun WorkoutDetailScreen(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = detailState?.description ?: "No description provided",
+                    text = currentExercise?.description ?: "No description provided",
                     style = MaterialTheme.typography.bodyMedium
                 )
+
+                // Show additional exercise details
+                currentExercise?.let { exercise ->
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Details:",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "Sets: ${exercise.sets}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Text(
+                        text = "Reps: ${exercise.reps}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Text(
+                        text = "Weight: ${exercise.weight}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -104,6 +138,20 @@ fun WorkoutDetailScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Edit Description")
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedButton(
+                    onClick = { showDeleteConfirm = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Delete Exercise")
+                }
             }
         }
 
@@ -112,13 +160,12 @@ fun WorkoutDetailScreen(
             AlertDialog(
                 onDismissRequest = { showDeleteConfirm = false },
                 title = { Text("Confirm Delete") },
-                text = { Text("Are you sure you want to delete this workout detail?") },
+                text = { Text("Are you sure you want to delete this exercise?") },
                 confirmButton = {
                     Button(
                         onClick = {
-                            viewModel.deleteWorkoutDetail(workoutId) {
-                                navController.popBackStack()
-                            }
+                            viewModel.deleteExercise(exerciseId)
+                            navController.popBackStack()
                         },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.error

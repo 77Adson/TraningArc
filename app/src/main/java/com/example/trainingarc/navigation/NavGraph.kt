@@ -1,9 +1,9 @@
 package com.example.trainingarc.navigation
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,6 +23,7 @@ import com.example.trainingarc.features.friendsPage.screens.FriendsScreen
 import com.example.trainingarc.features.homePage.screens.HomeScreen
 import com.example.trainingarc.features.homePage.screens.WorkoutDetailScreen
 import com.example.trainingarc.features.homePage.screens.WorkoutListScreen
+import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 import com.example.trainingarc.features.profilePage.screens.ProfileScreen
 import com.example.trainingarc.features.settingsPage.screen.SettingsScreen
 
@@ -30,6 +31,7 @@ import com.example.trainingarc.features.settingsPage.screen.SettingsScreen
 fun NavGraph(
     authViewModel: AuthViewModel = viewModel()
 ) {
+    println("DEBUG 1: NavGraph composition started")
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
@@ -38,6 +40,7 @@ fun NavGraph(
     val authState by authViewModel.state.collectAsStateWithLifecycle()
     val showBottomBar = currentRoute in Routes.bottomNavRoutes && authState.isLoggedIn
 
+    println("DEBUG 2: AuthState = isLoggedIn:${authState.isLoggedIn}, isLoading:${authState.isLoading}")
     Scaffold(
         containerColor = Color.Transparent,
         bottomBar = {
@@ -46,16 +49,18 @@ fun NavGraph(
             }
         }
     ) { innerPadding ->
+        val startDest = if (authState.isLoggedIn) Routes.Home.route else Routes.Login.route
+        println("DEBUG 3: Start destination = $startDest")
         NavHost(
             navController = navController,
             // CHANGED: Using authState instead of authViewModel.isLoggedIn.value
-            startDestination = if (authState.isLoggedIn) Routes.Home.route else Routes.Login.route,
+            startDestination = startDest,
             modifier = Modifier.padding(innerPadding)
         ) {
             // Auth
             composable(Routes.Login.route) {
+                println("DEBUG 4: Login screen")
                 LoginScreen(
-                    // CHANGED: Removed onLogin callback since ViewModel handles it directly
                     onLoginSuccess = {
                         navController.navigate(Routes.Home.route) {
                             popUpTo(Routes.Login.route) { inclusive = true }
@@ -96,6 +101,7 @@ fun NavGraph(
             composable(Routes.Settings.route) { SettingsScreen() }
 
             composable(Routes.Home.route) {
+                println("Starting Home screen")
                 HomeScreen(navController = navController) // ⬅️ przekazujemy właściwego
             }
 
@@ -104,15 +110,37 @@ fun NavGraph(
                 arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
             ) { backStackEntry ->
                 val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
-                WorkoutListScreen(sessionId = sessionId, navController = navController)
+                val viewModel: ExercisesListViewModel = viewModel()
+
+                // Initialize with the session data
+                LaunchedEffect(sessionId) {
+                    viewModel.getExercisesForSession(sessionId)
+                }
+
+                WorkoutListScreen(
+                    sessionId = sessionId,
+                    viewModel = viewModel,
+                    navController = navController
+                )
             }
 
             composable(
                 route = Routes.WorkoutDetail.route,
-                arguments = listOf(navArgument("workoutId") { type = NavType.StringType })
+                arguments = listOf(
+                    navArgument("sessionId") { type = NavType.StringType },
+                    navArgument("exerciseId") { type = NavType.StringType } // Must match route param name
+                )
             ) { backStackEntry ->
-                val workoutId = backStackEntry.arguments?.getString("workoutId") ?: return@composable
-                WorkoutDetailScreen(workoutId = workoutId, navController = navController)
+                val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
+                val exerciseId = backStackEntry.arguments?.getString("exerciseId") ?: return@composable
+                val viewModel: ExercisesListViewModel = viewModel()
+
+                WorkoutDetailScreen(
+                    sessionId = sessionId,
+                    exerciseId = exerciseId,
+                    viewModel = viewModel,
+                    navController = navController
+                )
             }
         }
     }
