@@ -18,23 +18,19 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.trainingarc.features.components.LoadingIndicator
+import com.example.trainingarc.features.homePage.screens.homeScreenComponents.AddSessionButton
 import com.example.trainingarc.features.homePage.screens.homeScreenComponents.TrainingSessionCard
-import com.example.trainingarc.features.homePage.model.TrainingSession
 import com.example.trainingarc.features.homePage.viewmodel.HomeViewModel
 import com.example.trainingarc.navigation.Routes
-import com.example.trainingarc.features.homePage.screens.homeScreenComponents.AddSessionButton
 
 @Composable
 fun HomeScreen(
@@ -42,24 +38,18 @@ fun HomeScreen(
     homeViewModel: HomeViewModel = viewModel()
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-    rememberCoroutineScope()
-
     var showDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var newSessionName by remember { mutableStateOf("") }
-    val currentSession by remember { mutableStateOf<TrainingSession?>(null) }
-    val sessions by homeViewModel.sessions.collectAsState()
-    val isLoading by homeViewModel.isLoading.collectAsState()
+    var sessionToDelete by remember { mutableStateOf<String?>(null) } // Now stores just the key
 
-    LaunchedEffect(Unit) {
-        homeViewModel.loadSessions()
-    }
+    // Changed to handle Pair<TrainingSession, String>
+    val sessions by homeViewModel.sessions.collectAsState()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = MaterialTheme.colorScheme.background // Set the background color
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        //Main content
         Column(
             modifier = Modifier
                 .padding(innerPadding)
@@ -72,32 +62,32 @@ fun HomeScreen(
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            if (isLoading) {
-                LoadingIndicator()
-            } else {
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(sessions) { session ->
-                        TrainingSessionCard(
-                            session = session,
-                            onClick = {
-                                navController.navigate(Routes.WorkoutList.createRoute(session.sessionId))
-                            }
-                        )
-                    }
-                    item {
-                        AddSessionButton(
-                            modifier = Modifier,
-                            onClick = { showDialog = true }
-                        )
-                    }
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(sessions) { (session, sessionKey) -> // Destructure the pair
+                    TrainingSessionCard(
+                        sessionName = session.sessionName, // Pass just what's needed
+                        onClick = {
+                            navController.navigate(Routes.WorkoutList.createRoute(sessionKey))
+                        },
+                        onDelete = {
+                            sessionToDelete = sessionKey
+                            showDeleteDialog = true
+                        }
+                    )
+                }
+                item {
+                    AddSessionButton(
+                        modifier = Modifier,
+                        onClick = { showDialog = true }
+                    )
                 }
             }
         }
 
-        // Dialog tworzenia nowej sesji
+        // New Session Dialog
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
@@ -113,8 +103,8 @@ fun HomeScreen(
                 confirmButton = {
                     Button(
                         onClick = {
-                            homeViewModel.createNewSession(newSessionName) { success ->
-                                if (success) {
+                            homeViewModel.createNewSession(newSessionName) { sessionKey ->
+                                if (sessionKey != null) {
                                     showDialog = false
                                     newSessionName = ""
                                 }
@@ -133,8 +123,8 @@ fun HomeScreen(
             )
         }
 
-        // Dialog potwierdzenia usunięcia
-        if (showDeleteDialog && currentSession != null) {
+        // Delete Confirmation Dialog
+        if (showDeleteDialog && sessionToDelete != null) {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
                 title = { Text("Confirm Delete") },
@@ -142,9 +132,9 @@ fun HomeScreen(
                 confirmButton = {
                     Button(
                         onClick = {
-                            currentSession?.let { session ->
-                                homeViewModel.deleteSession(session.sessionId) {
-                                    showDeleteDialog = false
+                            sessionToDelete?.let { key ->
+                                homeViewModel.deleteSession(key) { success ->
+                                    if (success) showDeleteDialog = false
                                 }
                             }
                         },

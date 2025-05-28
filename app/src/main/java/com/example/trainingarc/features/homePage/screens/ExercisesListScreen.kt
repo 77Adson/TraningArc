@@ -137,6 +137,7 @@ fun WorkoutListScreen(
         DeleteSessionDialog(
             onConfirm = {
                 viewModel.deleteCurrentSession(
+                    sessionKey = sessionId,
                     onSuccess = {
                         showDeleteSessionConfirm = false
                         navController.popBackStack()

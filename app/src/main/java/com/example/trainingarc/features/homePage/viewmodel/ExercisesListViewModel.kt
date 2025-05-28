@@ -143,22 +143,25 @@ class ExercisesListViewModel : ViewModel() {
         }
     }
 
-    fun deleteCurrentSession(onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+    fun deleteCurrentSession(
+        sessionKey: String,  // Now explicitly takes the Firebase key
+        onSuccess: () -> Unit = {},
+        onFailure: (Exception) -> Unit = {}
+    ) {
         viewModelScope.launch {
             try {
                 val userId = auth.currentUser?.uid ?: return@launch
-                val sessionId = currentSession.value?.sessionId ?: return@launch
 
-                // Delete all exercises in this session first
-                currentSession.value?.sessionExercises?.keys?.forEach { exerciseId ->
-                    database.child("users/$userId/sessions/$sessionId/sessionExercises/$exerciseId")
-                        .removeValue()
-                }
-
-                // Then delete the session itself
-                database.child("users/$userId/sessions/$sessionId")
+                // First delete all exercise references from the session
+                database.child("users/$userId/sessions/$sessionKey/sessionExercises")
                     .removeValue()
-                    .addOnSuccessListener { onSuccess() }
+                    .addOnSuccessListener {
+                        // Then delete the session itself
+                        database.child("users/$userId/sessions/$sessionKey")
+                            .removeValue()
+                            .addOnSuccessListener { onSuccess() }
+                            .addOnFailureListener { e -> onFailure(Exception(e)) }
+                    }
                     .addOnFailureListener { e -> onFailure(Exception(e)) }
             } catch (e: Exception) {
                 onFailure(e)

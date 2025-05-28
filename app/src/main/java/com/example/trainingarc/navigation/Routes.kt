@@ -13,12 +13,6 @@ sealed class Routes(val route: String) {
     data object Settings : Routes("settings")
     data object Profile : Routes("profile")
 
-//    data object SessionDetail : Routes("sessionDetail/{sessionId}") {
-//        fun createRoute(sessionId: String): String {
-//            return "sessionDetail/$sessionId"
-//        }
-//    }
-
     data object WorkoutList : Routes("workoutList/{sessionId}") {
         fun createRoute(sessionId: String): String = "workoutList/$sessionId"
     }

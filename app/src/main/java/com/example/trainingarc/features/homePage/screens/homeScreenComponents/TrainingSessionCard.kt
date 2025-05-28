@@ -17,13 +17,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.trainingarc.features.homePage.model.TrainingSession
 import com.example.trainingarc.ui.theme.sizes
 
 @Composable
 fun TrainingSessionCard(
-    session: TrainingSession,
+    sessionName: String,
     onClick: () -> Unit,
+    onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -36,7 +36,7 @@ fun TrainingSessionCard(
         )
     ) {
         SessionCardContent(
-            session = session,
+            sessionName = sessionName,
         )
     }
 }
@@ -44,7 +44,7 @@ fun TrainingSessionCard(
 // Content of the card
 @Composable
 private fun SessionCardContent(
-    session: TrainingSession,
+    sessionName: String,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -54,7 +54,7 @@ private fun SessionCardContent(
         verticalArrangement = Arrangement.Center
     ) {
         SessionCardHeader(
-            name = session.sessionName,
+            name = sessionName,
         )
         // Add more sections here like SessionCardFooter if needed
     }

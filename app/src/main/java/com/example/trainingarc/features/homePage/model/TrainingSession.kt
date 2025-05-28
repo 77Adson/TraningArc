@@ -2,7 +2,7 @@
 package com.example.trainingarc.features.homePage.model
 
 data class TrainingSession(
-    val sessionId: String = "",
+//    val sessionId: String = "",
     val sessionName: String = "",
     val sessionExercises: Map<String, Int> = emptyMap() // exerciseId to order
 )
