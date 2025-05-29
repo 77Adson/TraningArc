@@ -25,7 +25,7 @@ import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewMode
 import com.example.trainingarc.navigation.Routes
 
 @Composable
-fun WorkoutListScreen(
+fun ExerciseListScreen(
     sessionId: String,
     navController: NavController,
     viewModel: ExercisesListViewModel = viewModel()

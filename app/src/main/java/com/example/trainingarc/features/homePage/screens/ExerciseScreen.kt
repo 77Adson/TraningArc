@@ -14,7 +14,7 @@ import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WorkoutDetailScreen(
+fun ExerciseScreen(
     sessionId: String,
     exerciseId: String,
     navController: NavController,

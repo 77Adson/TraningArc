@@ -21,8 +21,8 @@ import com.example.trainingarc.features.auth.viewmodel.AuthViewModel
 import com.example.trainingarc.features.components.BottomNavigationBar
 import com.example.trainingarc.features.friendsPage.screens.FriendsScreen
 import com.example.trainingarc.features.homePage.screens.HomeScreen
-import com.example.trainingarc.features.homePage.screens.WorkoutDetailScreen
-import com.example.trainingarc.features.homePage.screens.WorkoutListScreen
+import com.example.trainingarc.features.homePage.screens.ExerciseScreen
+import com.example.trainingarc.features.homePage.screens.ExerciseListScreen
 import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 import com.example.trainingarc.features.profilePage.screens.ProfileScreen
 import com.example.trainingarc.features.settingsPage.screen.SettingsScreen
@@ -117,7 +117,7 @@ fun NavGraph(
                     viewModel.getExercisesForSession(sessionId)
                 }
 
-                WorkoutListScreen(
+                ExerciseListScreen(
                     sessionId = sessionId,
                     viewModel = viewModel,
                     navController = navController
@@ -135,7 +135,7 @@ fun NavGraph(
                 val exerciseId = backStackEntry.arguments?.getString("exerciseId") ?: return@composable
                 val viewModel: ExercisesListViewModel = viewModel()
 
-                WorkoutDetailScreen(
+                ExerciseScreen(
                     sessionId = sessionId,
                     exerciseId = exerciseId,
                     viewModel = viewModel,
