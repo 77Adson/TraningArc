@@ -20,16 +20,13 @@ fun WorkoutDetailScreen(
     navController: NavController,
     viewModel: ExercisesListViewModel = viewModel()
 ) {
-    // Get current exercise from the ViewModel's state
     val exercises by viewModel.exercises.collectAsState()
-    val currentExercise = exercises.find { it.exerciseId == exerciseId }
+    val currentExercise = exercises.find { it.id == exerciseId }
 
-    // Local state for editing
     var description by remember { mutableStateOf(currentExercise?.description ?: "") }
     var isEditing by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    // Update local state when exercise changes
     LaunchedEffect(currentExercise) {
         description = currentExercise?.description ?: ""
     }
@@ -68,7 +65,8 @@ fun WorkoutDetailScreen(
                         onClick = {
                             currentExercise?.let { exercise ->
                                 viewModel.updateExercise(
-                                    exercise.copy(description = description)
+                                    exerciseId = exercise.id,
+                                    exercise = exercise.exercise.copy(description = description)
                                 )
                             }
                             isEditing = false
@@ -101,7 +99,6 @@ fun WorkoutDetailScreen(
                     style = MaterialTheme.typography.bodyMedium
                 )
 
-                // Show additional exercise details
                 currentExercise?.let { exercise ->
                     Spacer(modifier = Modifier.height(16.dp))
 
@@ -155,7 +152,6 @@ fun WorkoutDetailScreen(
             }
         }
 
-        // Delete Confirmation Dialog
         if (showDeleteConfirm) {
             AlertDialog(
                 onDismissRequest = { showDeleteConfirm = false },

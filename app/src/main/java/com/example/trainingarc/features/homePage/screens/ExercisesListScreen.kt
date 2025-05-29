@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.trainingarc.features.homePage.model.Exercise
+import com.example.trainingarc.features.homePage.model.ExerciseWithId
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.AddWorkoutDialog
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.DeleteSessionDialog
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.DeleteWorkoutDialog
@@ -35,7 +36,7 @@ fun WorkoutListScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
-    var currentExercise by remember { mutableStateOf<Exercise?>(null) }
+    var currentExercise by remember { mutableStateOf<ExerciseWithId?>(null) }
     var newExerciseName by remember { mutableStateOf("") }
     var showDeleteSessionConfirm by remember { mutableStateOf(false) }
 
@@ -59,7 +60,7 @@ fun WorkoutListScreen(
         }
     ) { innerPadding ->
         WorkoutListScreenContent(
-            workouts = exercises, // Directly pass Exercise objects
+            workouts = exercises,
             onWorkoutClick = { exerciseId ->
                 navController.navigate(
                     Routes.WorkoutDetail.createRoute(
@@ -68,12 +69,12 @@ fun WorkoutListScreen(
                     )
                 )
             },
-            onEditClick = { exercise: Exercise -> // Now receives full Exercise
+            onEditClick = { exercise ->
                 currentExercise = exercise
                 newExerciseName = exercise.exerciseName
                 showEditDialog = true
             },
-            onDeleteClick = { exercise: Exercise -> // Now receives full Exercise
+            onDeleteClick = { exercise ->
                 currentExercise = exercise
                 showDeleteConfirm = true
             },
@@ -103,15 +104,15 @@ fun WorkoutListScreen(
         )
     }
 
-    // Edit Workout Dialog
     if (showEditDialog && currentExercise != null) {
         EditWorkoutDialog(
             name = newExerciseName,
             onNameChange = { newExerciseName = it },
             onConfirm = {
-                currentExercise?.let { exercise ->
+                currentExercise?.let { exerciseWithId ->
                     viewModel.updateExercise(
-                        exercise.copy(exerciseName = newExerciseName)
+                        exerciseId = exerciseWithId.id,
+                        exercise = exerciseWithId.exercise.copy(exerciseName = newExerciseName)
                     )
                 }
                 showEditDialog = false
@@ -120,12 +121,11 @@ fun WorkoutListScreen(
         )
     }
 
-    // Delete Confirmation Dialog
     if (showDeleteConfirm && currentExercise != null) {
         DeleteWorkoutDialog(
             onConfirm = {
                 currentExercise?.let { exercise ->
-                    viewModel.deleteExercise(exercise.exerciseId)
+                    viewModel.deleteExercise(exercise.id)
                 }
                 showDeleteConfirm = false
             },
@@ -143,7 +143,6 @@ fun WorkoutListScreen(
                         navController.popBackStack()
                     },
                     onFailure = { e ->
-                        // Handle error (show snackbar or log)
                         showDeleteSessionConfirm = false
                     }
                 )

@@ -8,6 +8,7 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import com.example.trainingarc.features.homePage.model.Exercise
+import com.example.trainingarc.features.homePage.model.ExerciseWithId
 import com.example.trainingarc.features.homePage.model.TrainingSession
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,8 +19,8 @@ class ExercisesListViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance().reference
 
-    private val _exercises = MutableStateFlow<List<Exercise>>(emptyList())
-    val exercises: StateFlow<List<Exercise>> = _exercises.asStateFlow()
+    private val _exercises = MutableStateFlow<List<ExerciseWithId>>(emptyList())
+    val exercises: StateFlow<List<ExerciseWithId>> = _exercises.asStateFlow()
 
     private val _currentSession = MutableStateFlow<TrainingSession?>(null)
     val currentSession: StateFlow<TrainingSession?> = _currentSession.asStateFlow()
@@ -30,26 +31,27 @@ class ExercisesListViewModel : ViewModel() {
             try {
                 val userId = auth.currentUser?.uid ?: return@launch
 
-                // First get the session to find which exercises it contains
                 database.child("users/$userId/sessions/$sessionId")
                     .addListenerForSingleValueEvent(object : ValueEventListener {
                         override fun onDataChange(sessionSnapshot: DataSnapshot) {
                             val session = sessionSnapshot.getValue(TrainingSession::class.java) ?: return
                             _currentSession.value = session
 
-                            // Then get all exercises for this user
                             database.child("users/$userId/exercises")
                                 .addListenerForSingleValueEvent(object : ValueEventListener {
                                     override fun onDataChange(exercisesSnapshot: DataSnapshot) {
                                         val allExercises = exercisesSnapshot.children.mapNotNull {
-                                            it.getValue(Exercise::class.java)
+                                            ExerciseWithId(
+                                                id = it.key ?: "",
+                                                exercise = it.getValue(Exercise::class.java) ?: return@mapNotNull null
+                                            )
                                         }
 
                                         // Filter to only include exercises in this session
                                         val sessionExercises = allExercises.filter { exercise ->
-                                            session.sessionExercises.containsKey(exercise.exerciseId)
+                                            session.sessionExercises.containsKey(exercise.id)
                                         }.sortedBy { exercise ->
-                                            session.sessionExercises[exercise.exerciseId]
+                                            session.sessionExercises[exercise.id]
                                         }
 
                                         _exercises.value = sessionExercises
@@ -78,9 +80,9 @@ class ExercisesListViewModel : ViewModel() {
                 val userId = auth.currentUser?.uid ?: return@launch
                 val exerciseId = database.child("exercises").push().key ?: return@launch
 
-                // Add to general exercises collection
+                // Add to general exercises collection (without exerciseId in the Exercise object)
                 database.child("users/$userId/exercises/$exerciseId")
-                    .setValue(exercise.copy(exerciseId = exerciseId))
+                    .setValue(exercise)
 
                 // Add reference to session with order
                 val order = (_currentSession.value?.sessionExercises?.size ?: 0) + 1
@@ -100,11 +102,11 @@ class ExercisesListViewModel : ViewModel() {
     }
 
     // Update an exercise
-    fun updateExercise(exercise: Exercise) {
+    fun updateExercise(exerciseId: String, exercise: Exercise) {
         viewModelScope.launch {
             try {
                 val userId = auth.currentUser?.uid ?: return@launch
-                database.child("users/$userId/exercises/${exercise.exerciseId}")
+                database.child("users/$userId/exercises/$exerciseId")
                     .setValue(exercise)
             } catch (e: Exception) {
                 // Handle error

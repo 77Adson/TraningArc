@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.example.trainingarc.features.homePage.model.Exercise
+import com.example.trainingarc.features.homePage.model.ExerciseWithId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,8 +15,9 @@ class ExerciseViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance().reference
 
-    private val _detail = MutableStateFlow<Exercise?>(null)
-    val detail: StateFlow<Exercise?> = _detail.asStateFlow()
+    // Change to use ExerciseWithId
+    private val _detail = MutableStateFlow<ExerciseWithId?>(null)
+    val detail: StateFlow<ExerciseWithId?> = _detail.asStateFlow()
 
     fun getDetail(workoutId: String) {
         viewModelScope.launch {
@@ -23,12 +25,14 @@ class ExerciseViewModel : ViewModel() {
                 database.child("workoutDetails/$workoutId")
                     .get()
                     .addOnSuccessListener { snapshot ->
-                        _detail.value = snapshot.getValue(Exercise::class.java)
-                            ?: Exercise(workoutId, "")
+                        _detail.value = ExerciseWithId(
+                            id = workoutId,
+                            exercise = snapshot.getValue(Exercise::class.java) ?: Exercise()
+                        )
                     }
             } catch (e: Exception) {
                 // Handle error
-                _detail.value = Exercise(workoutId, "")
+                _detail.value = ExerciseWithId(workoutId, Exercise())
             }
         }
     }
@@ -36,9 +40,10 @@ class ExerciseViewModel : ViewModel() {
     fun updateDescription(workoutId: String, description: String) {
         viewModelScope.launch {
             try {
-                val updatedDetail = Exercise(workoutId, description)
-                database.child("workoutDetails/$workoutId").setValue(updatedDetail)
-                _detail.value = updatedDetail
+                val currentExercise = _detail.value?.exercise ?: Exercise()
+                val updatedExercise = currentExercise.copy(description = description)
+                database.child("workoutDetails/$workoutId").setValue(updatedExercise)
+                _detail.value = ExerciseWithId(workoutId, updatedExercise)
             } catch (e: Exception) {
                 // Handle error
             }
@@ -51,7 +56,7 @@ class ExerciseViewModel : ViewModel() {
                 database.child("workoutDetails/$workoutId").removeValue()
                     .addOnSuccessListener { onSuccess() }
             } catch (e: Exception) {
-                // Obsługa błędu
+                // Handle error
             }
         }
     }

@@ -10,15 +10,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import com.example.trainingarc.features.homePage.model.Exercise
+import com.example.trainingarc.features.homePage.model.ExerciseWithId
 import com.example.trainingarc.ui.theme.sizes
 
 @Composable
 fun WorkoutListScreenContent(
-    workouts: List<Exercise>,
+    workouts: List<ExerciseWithId>,
     onWorkoutClick: (String) -> Unit,
-    onEditClick: (Exercise) -> Unit,
-    onDeleteClick: (Exercise) -> Unit,
+    onEditClick: (ExerciseWithId) -> Unit,
+    onDeleteClick: (ExerciseWithId) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -46,10 +46,10 @@ private fun EmptyWorkoutListPlaceholder() {
 
 @Composable
 private fun WorkoutList(
-    workouts: List<Exercise>,
+    workouts: List<ExerciseWithId>,
     onWorkoutClick: (String) -> Unit,
-    onEditClick: (Exercise) -> Unit,
-    onDeleteClick: (Exercise) -> Unit,
+    onEditClick: (ExerciseWithId) -> Unit,
+    onDeleteClick: (ExerciseWithId) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expandedWorkoutId by remember { mutableStateOf<String?>(null) }
@@ -58,12 +58,12 @@ private fun WorkoutList(
         workouts.forEach { workout ->
             WorkoutListItem(
                 workout = workout,
-                isExpanded = workout.exerciseId == expandedWorkoutId,
-                onWorkoutClick = { onWorkoutClick(workout.exerciseId) },
+                isExpanded = workout.id == expandedWorkoutId,
+                onWorkoutClick = { onWorkoutClick(workout.id) },
                 onEditClick = { onEditClick(workout) },
                 onDeleteClick = { onDeleteClick(workout) },
                 onExpandChange = { shouldExpand ->
-                    expandedWorkoutId = if (shouldExpand) workout.exerciseId else null
+                    expandedWorkoutId = if (shouldExpand) workout.id else null
                 }
             )
         }
@@ -72,7 +72,7 @@ private fun WorkoutList(
 
 @Composable
 fun WorkoutListItem(
-    workout: Exercise,
+    workout: ExerciseWithId,
     isExpanded: Boolean,
     onWorkoutClick: () -> Unit,
     onEditClick: () -> Unit,
