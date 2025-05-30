@@ -1,5 +1,7 @@
 package com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -8,9 +10,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.example.trainingarc.features.homePage.model.ExerciseWithId
+import com.example.trainingarc.ui.theme.AppShapes
+import com.example.trainingarc.ui.theme.pill
 import com.example.trainingarc.ui.theme.sizes
 
 @Composable
@@ -89,6 +94,7 @@ fun WorkoutListItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
+            .clip(MaterialTheme.shapes.small)
             .height(MaterialTheme.sizes.components.smallCardHeight)
             .padding(vertical = 4.dp)
             .pointerInput(Unit) {
@@ -96,7 +102,8 @@ fun WorkoutListItem(
                     onTap = { onWorkoutClick() },
                     onLongPress = { onExpandChange(true) }
                 )
-            },
+            }
+            .border(border = BorderStroke(1.1.dp, MaterialTheme.colorScheme.onBackground), shape = MaterialTheme.shapes.small),
 
         colors = CardDefaults.cardColors(
             containerColor = containerColor
@@ -122,9 +129,9 @@ private fun WorkoutListItemContent(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
-            .padding(8.dp)
             .fillMaxWidth()
             .fillMaxHeight()
+            .padding(8.dp)
     ) {
         WorkoutName(
             name = name,

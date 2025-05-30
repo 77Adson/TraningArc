@@ -1,6 +1,7 @@
 package com.example.trainingarc.features.homePage.screens
 
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +24,7 @@ import com.example.trainingarc.features.homePage.screens.exerciseListScreenCompo
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.WorkoutListTopBar
 import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 import com.example.trainingarc.navigation.Routes
+import com.example.trainingarc.ui.theme.sizes
 
 @Composable
 fun ExerciseListScreen(
@@ -78,7 +80,9 @@ fun ExerciseListScreen(
                 currentExercise = exercise
                 showDeleteConfirm = true
             },
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(horizontal = MaterialTheme.sizes.spacing.medium)
         )
     }
 
