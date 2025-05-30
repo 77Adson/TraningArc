@@ -25,62 +25,85 @@ class ExercisesListViewModel : ViewModel() {
     private val _currentSession = MutableStateFlow<TrainingSession?>(null)
     val currentSession: StateFlow<TrainingSession?> = _currentSession.asStateFlow()
 
-    // Get all exercises for a session
+    private var currentSessionId: String? = null
+    private var exercisesListener: ValueEventListener? = null
+    private var sessionListener: ValueEventListener? = null
+
     fun getExercisesForSession(sessionId: String) {
-        viewModelScope.launch {
-            try {
-                val userId = auth.currentUser?.uid ?: return@launch
-
-                database.child("users/$userId/sessions/$sessionId")
-                    .addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(sessionSnapshot: DataSnapshot) {
-                            val session = sessionSnapshot.getValue(TrainingSession::class.java) ?: return
-                            _currentSession.value = session
-
-                            database.child("users/$userId/exercises")
-                                .addListenerForSingleValueEvent(object : ValueEventListener {
-                                    override fun onDataChange(exercisesSnapshot: DataSnapshot) {
-                                        val allExercises = exercisesSnapshot.children.mapNotNull {
-                                            ExerciseWithId(
-                                                id = it.key ?: "",
-                                                exercise = it.getValue(Exercise::class.java) ?: return@mapNotNull null
-                                            )
-                                        }
-
-                                        // Filter to only include exercises in this session
-                                        val sessionExercises = allExercises.filter { exercise ->
-                                            session.sessionExercises.containsKey(exercise.id)
-                                        }.sortedBy { exercise ->
-                                            session.sessionExercises[exercise.id]
-                                        }
-
-                                        _exercises.value = sessionExercises
-                                    }
-
-                                    override fun onCancelled(error: DatabaseError) {
-                                        // Handle error
-                                    }
-                                })
-                        }
-
-                        override fun onCancelled(error: DatabaseError) {
-                            // Handle error
-                        }
-                    })
-            } catch (e: Exception) {
-                // Handle error
-            }
-        }
+        currentSessionId = sessionId
+        setupRealTimeListeners(sessionId)
     }
 
-    // Add a new exercise to both the exercises list and the session
+    private fun setupRealTimeListeners(sessionId: String) {
+        // Remove previous listeners to avoid duplicates
+        exercisesListener?.let { database.removeEventListener(it) }
+        sessionListener?.let { database.removeEventListener(it) }
+
+        val userId = auth.currentUser?.uid ?: return
+
+        // Listener for session data
+        sessionListener = database.child("users/$userId/sessions/$sessionId")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(sessionSnapshot: DataSnapshot) {
+                    val session = sessionSnapshot.getValue(TrainingSession::class.java) ?: return
+                    _currentSession.value = session
+                    updateExercisesList(userId, session)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    // Handle error
+                }
+            })
+
+        // Listener for exercises data
+        exercisesListener = database.child("users/$userId/exercises")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(exercisesSnapshot: DataSnapshot) {
+                    _currentSession.value?.let { session ->
+                        updateExercisesList(userId, session)
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    // Handle error
+                }
+            })
+    }
+
+    private fun updateExercisesList(userId: String, session: TrainingSession) {
+        database.child("users/$userId/exercises")
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(exercisesSnapshot: DataSnapshot) {
+                    val allExercises = exercisesSnapshot.children.mapNotNull {
+                        ExerciseWithId(
+                            id = it.key ?: "",
+                            exercise = it.getValue(Exercise::class.java) ?: return@mapNotNull null
+                        )
+                    }
+
+                    // Filter to only include exercises in this session
+                    val sessionExercises = allExercises.filter { exercise ->
+                        session.sessionExercises.containsKey(exercise.id)
+                    }.sortedBy { exercise ->
+                        session.sessionExercises[exercise.id]
+                    }
+
+                    _exercises.value = sessionExercises
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    // Handle error
+                }
+            })
+    }
+
     fun addExercise(sessionId: String, exercise: Exercise) {
         viewModelScope.launch {
             try {
                 val userId = auth.currentUser?.uid ?: return@launch
-                val exerciseId = database.child("exercises").push().key ?: return@launch
+                val exerciseId = database.child("users/$userId/exercises").push().key ?: return@launch
 
-                // Add to general exercises collection (without exerciseId in the Exercise object)
+                // Add to general exercises collection
                 database.child("users/$userId/exercises/$exerciseId")
                     .setValue(exercise)
 
@@ -88,20 +111,12 @@ class ExercisesListViewModel : ViewModel() {
                 val order = (_currentSession.value?.sessionExercises?.size ?: 0) + 1
                 database.child("users/$userId/sessions/$sessionId/sessionExercises/$exerciseId")
                     .setValue(order)
-
-                // Update local session data
-                _currentSession.value?.let { current ->
-                    val updatedExercises = current.sessionExercises.toMutableMap()
-                    updatedExercises[exerciseId] = order
-                    _currentSession.value = current.copy(sessionExercises = updatedExercises)
-                }
             } catch (e: Exception) {
                 // Handle error
             }
         }
     }
 
-    // Update an exercise
     fun updateExercise(exerciseId: String, exercise: Exercise) {
         viewModelScope.launch {
             try {
@@ -114,35 +129,29 @@ class ExercisesListViewModel : ViewModel() {
         }
     }
 
-    // Delete an exercise (from both exercises collection and all sessions)
     fun deleteExercise(exerciseId: String) {
         viewModelScope.launch {
             try {
                 val userId = auth.currentUser?.uid ?: return@launch
+                val sessionId = currentSessionId ?: return@launch
 
-                // Delete from exercises collection
+                // Remove from exercises collection
                 database.child("users/$userId/exercises/$exerciseId")
                     .removeValue()
 
-                // Delete from all sessions (you might want to add a transaction here)
-                database.child("users/$userId/sessions")
-                    .addListenerForSingleValueEvent(object : ValueEventListener {
-                        override fun onDataChange(snapshot: DataSnapshot) {
-                            snapshot.children.forEach { sessionSnapshot ->
-                                val sessionId = sessionSnapshot.key ?: return@forEach
-                                database.child("users/$userId/sessions/$sessionId/sessionExercises/$exerciseId")
-                                    .removeValue()
-                            }
-                        }
-
-                        override fun onCancelled(error: DatabaseError) {
-                            // Handle error
-                        }
-                    })
+                // Remove from current session
+                database.child("users/$userId/sessions/$sessionId/sessionExercises/$exerciseId")
+                    .removeValue()
             } catch (e: Exception) {
                 // Handle error
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        exercisesListener?.let { database.removeEventListener(it) }
+        sessionListener?.let { database.removeEventListener(it) }
     }
 
     fun deleteCurrentSession(

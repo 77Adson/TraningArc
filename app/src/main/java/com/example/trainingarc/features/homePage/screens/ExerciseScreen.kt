@@ -20,21 +20,29 @@ fun ExerciseScreen(
     navController: NavController,
     viewModel: ExercisesListViewModel = viewModel()
 ) {
-    val exercises by viewModel.exercises.collectAsState()
-    val currentExercise = exercises.find { it.id == exerciseId }
+    // Initialize with the session ID
+    LaunchedEffect(sessionId) {
+        viewModel.getExercisesForSession(sessionId)
+    }
 
-    var description by remember { mutableStateOf(currentExercise?.description ?: "") }
+    val exercises by viewModel.exercises.collectAsState()
+    val currentExercise = remember(exercises, exerciseId) {
+        exercises.find { it.id == exerciseId }
+    }
+
+    var description by remember { mutableStateOf("") }
     var isEditing by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
+    // Update description when exercise changes
     LaunchedEffect(currentExercise) {
-        description = currentExercise?.description ?: ""
+        description = currentExercise?.exercise?.description ?: ""
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(currentExercise?.exerciseName ?: "Workout Details") },
+                title = { Text(currentExercise?.exercise?.exerciseName ?: "Workout Details") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -79,7 +87,7 @@ fun ExerciseScreen(
 
                     OutlinedButton(
                         onClick = {
-                            description = currentExercise?.description ?: ""
+                            description = currentExercise?.exercise?.description ?: ""
                             isEditing = false
                         }
                     ) {
@@ -95,11 +103,11 @@ fun ExerciseScreen(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = currentExercise?.description ?: "No description provided",
+                    text = currentExercise?.exercise?.description ?: "No description provided",
                     style = MaterialTheme.typography.bodyMedium
                 )
 
-                currentExercise?.let { exercise ->
+                currentExercise?.exercise?.let { exercise ->
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
