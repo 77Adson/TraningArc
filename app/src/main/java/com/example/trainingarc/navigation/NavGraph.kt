@@ -23,6 +23,7 @@ import com.example.trainingarc.features.friendsPage.screens.FriendsScreen
 import com.example.trainingarc.features.homePage.screens.HomeScreen
 import com.example.trainingarc.features.homePage.screens.ExerciseScreen
 import com.example.trainingarc.features.homePage.screens.ExerciseListScreen
+import com.example.trainingarc.features.homePage.viewmodel.ExerciseViewModel
 import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 import com.example.trainingarc.features.profilePage.screens.ProfileScreen
 import com.example.trainingarc.features.settingsPage.screen.SettingsScreen
@@ -133,7 +134,7 @@ fun NavGraph(
             ) { backStackEntry ->
                 val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
                 val exerciseId = backStackEntry.arguments?.getString("exerciseId") ?: return@composable
-                val viewModel: ExercisesListViewModel = viewModel()
+                val viewModel: ExerciseViewModel = viewModel()
 
                 ExerciseScreen(
                     sessionId = sessionId,

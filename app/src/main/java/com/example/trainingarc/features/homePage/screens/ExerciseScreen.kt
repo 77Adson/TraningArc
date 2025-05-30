@@ -10,7 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
+import com.example.trainingarc.features.homePage.screens.exerciseScreenComponents.EditableNumberField
+import com.example.trainingarc.features.homePage.viewmodel.ExerciseViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -18,36 +19,61 @@ fun ExerciseScreen(
     sessionId: String,
     exerciseId: String,
     navController: NavController,
-    viewModel: ExercisesListViewModel = viewModel()
+    viewModel: ExerciseViewModel = viewModel()  // Changed to ExerciseViewModel
 ) {
-    // Initialize with the session ID
-    LaunchedEffect(sessionId) {
-        viewModel.getExercisesForSession(sessionId)
+    // Load exercise details
+    LaunchedEffect(exerciseId) {
+        viewModel.getExerciseDetail(exerciseId)
     }
 
-    val exercises by viewModel.exercises.collectAsState()
-    val currentExercise = remember(exercises, exerciseId) {
-        exercises.find { it.id == exerciseId }
-    }
-
-    var description by remember { mutableStateOf("") }
-    var isEditing by remember { mutableStateOf(false) }
+    val exercise by viewModel.detail.collectAsState()
+    var localSets by remember { mutableIntStateOf(0) }
+    var localReps by remember { mutableIntStateOf(0) }
+    var localWeight by remember { mutableFloatStateOf(0f) }
+    var localDescription by remember { mutableStateOf("") }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    // Update description when exercise changes
-    LaunchedEffect(currentExercise) {
-        description = currentExercise?.exercise?.description ?: ""
+    // Initialize local state when exercise loads
+    LaunchedEffect(exercise) {
+        exercise?.exercise?.let {
+            localSets = it.sets
+            localReps = it.reps
+            localWeight = it.weight
+            localDescription = it.description
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(currentExercise?.exercise?.exerciseName ?: "Workout Details") },
+                title = { Text(exercise?.exercise?.exerciseName ?: "Exercise Details") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = {
+                    // Save button in top bar
+                    IconButton(
+                        onClick = {
+                            exercise?.let {
+                                viewModel.updateExerciseStats(
+                                    exerciseId  = it.id,
+                                    sets = localSets,
+                                    reps = localReps,
+                                    weight = localWeight
+                                )
+                            }
+                        },
+                        enabled = exercise?.let {
+                            it.exercise.sets != localSets ||
+                                    it.exercise.reps != localReps ||
+                                    it.exercise.weight != localWeight
+                        } ?: false
+                    ) {
+                        Icon(Icons.Default.Save, contentDescription = "Save")
+                    }
+                }
             )
         }
     ) { innerPadding ->
@@ -56,134 +82,116 @@ fun ExerciseScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            if (isEditing) {
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Description") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    maxLines = 5
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row {
-                    Button(
-                        onClick = {
-                            currentExercise?.let { exercise ->
-                                viewModel.updateExercise(
-                                    exerciseId = exercise.id,
-                                    exercise = exercise.exercise.copy(description = description)
-                                )
+            // Description field (always editable)
+            OutlinedTextField(
+                value = localDescription,
+                onValueChange = { localDescription = it },
+                label = { Text("Description") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3,
+                maxLines = 5,
+                trailingIcon = {
+                    if (localDescription != exercise?.exercise?.description) {
+                        IconButton(
+                            onClick = {
+                                exercise?.let {
+                                    viewModel.updateDescription(it.id, localDescription)
+                                }
                             }
-                            isEditing = false
+                        ) {
+                            Icon(Icons.Default.Check, contentDescription = "Save")
                         }
-                    ) {
-                        Text("Save Changes")
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    OutlinedButton(
-                        onClick = {
-                            description = currentExercise?.exercise?.description ?: ""
-                            isEditing = false
-                        }
-                    ) {
-                        Text("Cancel")
-                    }
-                }
-            } else {
-                Text(
-                    text = "Description:",
-                    style = MaterialTheme.typography.labelLarge
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = currentExercise?.exercise?.description ?: "No description provided",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                currentExercise?.exercise?.let { exercise ->
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Details:",
-                        style = MaterialTheme.typography.labelLarge
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = "Sets: ${exercise.sets}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    Text(
-                        text = "Reps: ${exercise.reps}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    Text(
-                        text = "Weight: ${exercise.weight}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = { isEditing = true },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Edit, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Edit Description")
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedButton(
-                    onClick = { showDeleteConfirm = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Icon(Icons.Default.Delete, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Delete Exercise")
-                }
-            }
-        }
-
-        if (showDeleteConfirm) {
-            AlertDialog(
-                onDismissRequest = { showDeleteConfirm = false },
-                title = { Text("Confirm Delete") },
-                text = { Text("Are you sure you want to delete this exercise?") },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            viewModel.deleteExercise(exerciseId)
-                            navController.popBackStack()
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Text("Delete")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteConfirm = false }) {
-                        Text("Cancel")
                     }
                 }
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Exercise stats
+            Text(
+                text = "Exercise Stats:",
+                style = MaterialTheme.typography.labelLarge
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            EditableNumberField(
+                label = "Sets",
+                value = localSets,
+                onValueChange = { localSets = it.toInt() }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            EditableNumberField(
+                label = "Reps",
+                value = localReps,
+                onValueChange = { localReps = it.toInt() }
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            EditableNumberField(
+                label = "Weight (kg)",
+                value = localWeight,
+                onValueChange = { localWeight = it.toFloat() },
+                isFloat = true
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Delete button
+            OutlinedButton(
+                onClick = { showDeleteConfirm = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Delete Exercise")
+            }
         }
+    }
+
+    // Delete confirmation dialog
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Confirm Delete") },
+            text = { Text("Are you sure you want to delete this exercise?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        exercise?.let {
+                            viewModel.deleteExercise(
+                                exerciseId = it.id, // Assuming it.id is the correct ID for deletion
+                                sessionId = sessionId,
+                                onSuccess = {
+                                    // This code will run AFTER successful deletion
+                                    navController.popBackStack()
+                                    showDeleteConfirm = false // Also dismiss the dialog
+                                }
+                            )
+                        }
+                        // If exercise is null, you might want to dismiss the dialog anyway
+                        if (exercise == null) {
+                            showDeleteConfirm = false
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
