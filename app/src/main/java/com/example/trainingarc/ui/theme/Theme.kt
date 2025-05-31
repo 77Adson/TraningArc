@@ -58,7 +58,9 @@ data class AppSizes(
         val medium: Dp = 24.dp,
         val large: Dp = 32.dp,
         val extraLarge: Dp = 40.dp
-    )
+    ) {
+        companion object
+    }
 
     data class Components(
         val buttonHeight: Dp = 48.dp,

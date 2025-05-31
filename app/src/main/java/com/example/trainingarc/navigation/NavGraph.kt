@@ -162,15 +162,12 @@ fun NavGraph(
                 }
                 val parentViewModel: ExerciseViewModel = viewModel(parentEntry)
 
-                LaunchedEffect(exerciseId) {
-                    parentViewModel.getExerciseDetail(exerciseId)
-                }
-
                 val exercise by parentViewModel.detail.collectAsState()
 
                 ProgressChartScreen(
                     exercise = exercise ?: ExerciseWithId(exerciseId, Exercise()),
-                    modifier = Modifier.padding(innerPadding)
+                    navController = navController, // Przekazujemy navController
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         }
