@@ -30,7 +30,6 @@ import com.example.trainingarc.features.homePage.model.ExerciseWithId
 import com.example.trainingarc.features.homePage.screens.HomeScreen
 import com.example.trainingarc.features.homePage.screens.ExerciseScreen
 import com.example.trainingarc.features.homePage.screens.ExerciseListScreen
-import com.example.trainingarc.features.homePage.viewmodel.ExerciseViewModel
 import com.example.trainingarc.features.homePage.screens.ProgressChartScreen
 import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 import com.example.trainingarc.features.profilePage.screens.ProfileScreen
@@ -140,9 +139,12 @@ fun NavGraph(
                     navArgument("exerciseId") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
-                val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
-                val exerciseId = backStackEntry.arguments?.getString("exerciseId") ?: return@composable
-                val viewModel: ExerciseViewModel = viewModel()
+                val sessionId = backStackEntry.arguments?.getString("sessionId") ?: ""
+                val exerciseId = backStackEntry.arguments?.getString("exerciseId") ?: ""
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(Routes.WorkoutList.route)
+                }
+                val viewModel: ExercisesListViewModel = viewModel(parentEntry)
 
                 ExerciseScreen(
                     sessionId = sessionId,

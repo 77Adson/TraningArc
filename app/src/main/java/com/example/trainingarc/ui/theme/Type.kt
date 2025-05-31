@@ -25,7 +25,7 @@ val Typography = Typography(
 
     // ----- Headline Styles (Page/section titles) -----
     headlineLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,  // Elegant serif for titles
+        fontFamily = FontFamily.Serif,  // Elegant serif for titles
         fontWeight = FontWeight.Bold,
         fontSize = 32.sp,
         lineHeight = 40.sp
@@ -57,7 +57,7 @@ val Typography = Typography(
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
-        fontSize = 18.sp,
+        fontSize = 16.sp,
         lineHeight = 24.sp,
         letterSpacing = 0.5.sp
     ),  // Standard paragraph text
@@ -65,7 +65,7 @@ val Typography = Typography(
     bodyMedium = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
+        fontSize = 14.sp,
         lineHeight = 20.sp
     ),  // Secondary text (e.g., under cards)
 

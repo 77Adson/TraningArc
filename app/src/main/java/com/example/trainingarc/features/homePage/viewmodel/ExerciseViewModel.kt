@@ -14,102 +14,46 @@ import kotlinx.coroutines.launch
 class ExerciseViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance().reference
-    private val userId get() = auth.currentUser?.uid ?: ""
 
+    // Change to use ExerciseWithId
     private val _detail = MutableStateFlow<ExerciseWithId?>(null)
     val detail: StateFlow<ExerciseWithId?> = _detail.asStateFlow()
 
-    fun getExerciseDetail(exerciseId: String) {
+    fun getDetail(workoutId: String) {
         viewModelScope.launch {
             try {
-                database.child("users/$userId/exercises/$exerciseId")
+                database.child("workoutDetails/$workoutId")
                     .get()
                     .addOnSuccessListener { snapshot ->
                         _detail.value = ExerciseWithId(
-                            id = exerciseId,
+                            id = workoutId,
                             exercise = snapshot.getValue(Exercise::class.java) ?: Exercise()
                         )
                     }
-                    .addOnFailureListener {
-                        _detail.value = ExerciseWithId(exerciseId, Exercise())
-                    }
             } catch (e: Exception) {
-                _detail.value = ExerciseWithId(exerciseId, Exercise())
+                // Handle error
+                _detail.value = ExerciseWithId(workoutId, Exercise())
             }
         }
     }
 
-    fun updateExerciseStats(
-        exerciseId: String,
-        sets: Int,
-        reps: Int,
-        weight: Float,
-        onSuccess: () -> Unit = {}
-    ) {
+    fun updateDescription(workoutId: String, description: String) {
         viewModelScope.launch {
             try {
-                val updates = mapOf(
-                    "sets" to sets,
-                    "reps" to reps,
-                    "weight" to weight
-                )
-
-                database.child("users/$userId/exercises/$exerciseId")
-                    .updateChildren(updates)
-                    .addOnSuccessListener {
-                        // Update local state
-                        _detail.value?.let { current ->
-                            _detail.value = current.copy(
-                                exercise = current.exercise.copy(
-                                    sets = sets,
-                                    reps = reps,
-                                    weight = weight
-                                )
-                            )
-                        }
-                        onSuccess()
-                    }
+                val currentExercise = _detail.value?.exercise ?: Exercise()
+                val updatedExercise = currentExercise.copy(description = description)
+                database.child("workoutDetails/$workoutId").setValue(updatedExercise)
+                _detail.value = ExerciseWithId(workoutId, updatedExercise)
             } catch (e: Exception) {
                 // Handle error
             }
         }
     }
 
-    fun updateDescription(exerciseId: String, description: String) {
+    fun deleteWorkoutDetail(workoutId: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
-                database.child("users/$userId/exercises/$exerciseId/description")
-                    .setValue(description)
-                    .addOnSuccessListener {
-                        // Update local state
-                        _detail.value?.let { current ->
-                            _detail.value = current.copy(
-                                exercise = current.exercise.copy(
-                                    description = description
-                                )
-                            )
-                        }
-                    }
-            } catch (e: Exception) {
-                // Handle error
-            }
-        }
-    }
-
-    fun deleteExercise(
-        sessionId: String,
-        exerciseId: String,
-        onSuccess: () -> Unit
-    ) {
-        viewModelScope.launch {
-            try {
-                // Remove from exercises collection
-                database.child("users/$userId/exercises/$exerciseId")
-                    .removeValue()
-
-                // Remove from session's exercise list
-                database.child("users/$userId/sessions/$sessionId/sessionExercises/$exerciseId")
-                    .removeValue()
+                database.child("workoutDetails/$workoutId").removeValue()
                     .addOnSuccessListener { onSuccess() }
             } catch (e: Exception) {
                 // Handle error
