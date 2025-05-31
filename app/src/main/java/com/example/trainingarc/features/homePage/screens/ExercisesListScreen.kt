@@ -1,6 +1,11 @@
 package com.example.trainingarc.features.homePage.screens
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +28,19 @@ import com.example.trainingarc.features.homePage.screens.exerciseListScreenCompo
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.WorkoutListTopBar
 import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 import com.example.trainingarc.navigation.Routes
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
 
 @Composable
 fun ExerciseListScreen(
@@ -59,27 +77,34 @@ fun ExerciseListScreen(
             )
         }
     ) { innerPadding ->
-        WorkoutListScreenContent(
-            workouts = exercises,
-            onWorkoutClick = { exerciseId ->
-                navController.navigate(
-                    Routes.WorkoutDetail.createRoute(
-                        sessionId = sessionId,
-                        exerciseId = exerciseId
-                    )
+        LazyColumn(modifier = Modifier.padding(innerPadding)) {
+            items(exercises.size) { index ->
+                val exercise = exercises[index]
+                ExerciseItem(
+                    exercise = exercise,
+                    onItemClick = {
+                        navController.navigate(
+                            Routes.WorkoutDetail.createRoute(
+                                sessionId = sessionId,
+                                exerciseId = exercise.id
+                            )
+                        )
+                    },
+                    onEditClick = {
+                        currentExercise = exercise
+                        newExerciseName = exercise.exerciseName
+                        showEditDialog = true
+                    },
+                    onDeleteClick = {
+                        currentExercise = exercise
+                        showDeleteConfirm = true
+                    },
+                    onChartClick = {
+                        navController.navigate("progressChart/${exercise.id}")
+                    }
                 )
-            },
-            onEditClick = { exercise ->
-                currentExercise = exercise
-                newExerciseName = exercise.exerciseName
-                showEditDialog = true
-            },
-            onDeleteClick = { exercise ->
-                currentExercise = exercise
-                showDeleteConfirm = true
-            },
-            modifier = Modifier.padding(innerPadding)
-        )
+            }
+        }
     }
 
     if (showAddDialog) {
@@ -149,5 +174,62 @@ fun ExerciseListScreen(
             },
             onDismiss = { showDeleteSessionConfirm = false }
         )
+    }
+}
+
+@Composable
+fun ExerciseItem(
+    exercise: ExerciseWithId,
+    onItemClick: () -> Unit,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onChartClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        onClick = onItemClick
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = exercise.exerciseName,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = "${exercise.weight} kg × ${exercise.reps} × ${exercise.sets}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            Row {
+                IconButton(onClick = onChartClick) {
+                    Icon(
+                        imageVector = Icons.Default.ShowChart,
+                        contentDescription = "Pokaż wykres"
+                    )
+                }
+                IconButton(onClick = onEditClick) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edytuj"
+                    )
+                }
+                IconButton(onClick = onDeleteClick) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Usuń"
+                    )
+                }
+            }
+        }
     }
 }

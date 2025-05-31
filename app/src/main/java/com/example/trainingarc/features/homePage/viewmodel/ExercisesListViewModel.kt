@@ -1,5 +1,6 @@
 package com.example.trainingarc.features.homePage.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
@@ -14,6 +15,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 class ExercisesListViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
@@ -101,7 +106,8 @@ class ExercisesListViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val userId = auth.currentUser?.uid ?: return@launch
-                val exerciseId = database.child("users/$userId/exercises").push().key ?: return@launch
+                val exerciseId =
+                    database.child("users/$userId/exercises").push().key ?: return@launch
 
                 // Add to general exercises collection
                 database.child("users/$userId/exercises/$exerciseId")

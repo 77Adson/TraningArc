@@ -1,10 +1,16 @@
 package com.example.trainingarc.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -20,9 +26,11 @@ import com.example.trainingarc.features.auth.screens.RegisterScreen
 import com.example.trainingarc.features.auth.viewmodel.AuthViewModel
 import com.example.trainingarc.features.components.BottomNavigationBar
 import com.example.trainingarc.features.friendsPage.screens.FriendsScreen
+import com.example.trainingarc.features.homePage.model.ExerciseWithId
 import com.example.trainingarc.features.homePage.screens.HomeScreen
 import com.example.trainingarc.features.homePage.screens.ExerciseScreen
 import com.example.trainingarc.features.homePage.screens.ExerciseListScreen
+import com.example.trainingarc.features.homePage.screens.ProgressChartScreen
 import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 import com.example.trainingarc.features.profilePage.screens.ProfileScreen
 import com.example.trainingarc.features.settingsPage.screen.SettingsScreen
@@ -36,7 +44,7 @@ fun NavGraph(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    //Stateflow from ViewModel
+    // Stateflow from ViewModel
     val authState by authViewModel.state.collectAsStateWithLifecycle()
     val showBottomBar = currentRoute in Routes.bottomNavRoutes && authState.isLoggedIn
 
@@ -53,7 +61,6 @@ fun NavGraph(
         println("DEBUG 3: Start destination = $startDest")
         NavHost(
             navController = navController,
-            // CHANGED: Using authState instead of authViewModel.isLoggedIn.value
             startDestination = startDest,
             modifier = Modifier.padding(innerPadding)
         ) {
@@ -75,7 +82,6 @@ fun NavGraph(
             composable(Routes.Register.route) {
                 RegisterScreen(
                     onRegisterSuccess = {
-                        // Navigate to home on successful registration
                         navController.navigate(Routes.Home.route) {
                             popUpTo(Routes.Login.route) { inclusive = true }
                         }
@@ -102,25 +108,27 @@ fun NavGraph(
 
             composable(Routes.Home.route) {
                 println("Starting Home screen")
-                HomeScreen(navController = navController) // ⬅️ przekazujemy właściwego
+                HomeScreen(navController = navController)
             }
 
             composable(
                 route = Routes.WorkoutList.route,
                 arguments = listOf(navArgument("sessionId") { type = NavType.StringType })
             ) { backStackEntry ->
-                val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
-                val viewModel: ExercisesListViewModel = viewModel()
+                val sessionId = backStackEntry.arguments?.getString("sessionId") ?: ""
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(Routes.WorkoutList.route)
+                }
+                val viewModel: ExercisesListViewModel = viewModel(parentEntry)
 
-                // Initialize with the session data
                 LaunchedEffect(sessionId) {
                     viewModel.getExercisesForSession(sessionId)
                 }
 
                 ExerciseListScreen(
                     sessionId = sessionId,
-                    viewModel = viewModel,
-                    navController = navController
+                    navController = navController,
+                    viewModel = viewModel
                 )
             }
 
@@ -128,12 +136,15 @@ fun NavGraph(
                 route = Routes.WorkoutDetail.route,
                 arguments = listOf(
                     navArgument("sessionId") { type = NavType.StringType },
-                    navArgument("exerciseId") { type = NavType.StringType } // Must match route param name
+                    navArgument("exerciseId") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
-                val sessionId = backStackEntry.arguments?.getString("sessionId") ?: return@composable
-                val exerciseId = backStackEntry.arguments?.getString("exerciseId") ?: return@composable
-                val viewModel: ExercisesListViewModel = viewModel()
+                val sessionId = backStackEntry.arguments?.getString("sessionId") ?: ""
+                val exerciseId = backStackEntry.arguments?.getString("exerciseId") ?: ""
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(Routes.WorkoutList.route)
+                }
+                val viewModel: ExercisesListViewModel = viewModel(parentEntry)
 
                 ExerciseScreen(
                     sessionId = sessionId,
@@ -141,6 +152,25 @@ fun NavGraph(
                     viewModel = viewModel,
                     navController = navController
                 )
+            }
+
+            composable("progressChart/{exerciseId}") { backStackEntry ->
+                val exerciseId = backStackEntry.arguments?.getString("exerciseId") ?: ""
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(Routes.WorkoutList.route)
+                }
+                val viewModel: ExercisesListViewModel = viewModel(parentEntry)
+                val exercises by viewModel.exercises.collectAsState()
+
+                val exercise = exercises.find { it.id == exerciseId }
+
+                if (exercise != null) {
+                    ProgressChartScreen(exercise = exercise)
+                } else {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Nie znaleziono ćwiczenia")
+                    }
+                }
             }
         }
     }
