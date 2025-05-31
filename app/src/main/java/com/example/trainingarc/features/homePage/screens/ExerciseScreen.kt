@@ -1,53 +1,66 @@
 package com.example.trainingarc.features.homePage.screens
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
+import com.example.trainingarc.features.homePage.screens.exerciseScreenComponents.DeleteDialog
+import com.example.trainingarc.features.homePage.screens.exerciseScreenComponents.ExerciseDescriptionField
+import com.example.trainingarc.features.homePage.screens.exerciseScreenComponents.ExerciseStatsSection
+import com.example.trainingarc.features.homePage.screens.exerciseScreenComponents.ExerciseTopBar
+import com.example.trainingarc.features.homePage.screens.exerciseScreenComponents.SaveButton
+import com.example.trainingarc.features.homePage.screens.exerciseScreenComponents.ShowGraphButton
+import com.example.trainingarc.features.homePage.viewmodel.ExerciseViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExerciseScreen(
     sessionId: String,
     exerciseId: String,
     navController: NavController,
-    viewModel: ExercisesListViewModel = viewModel()
+    viewModel: ExerciseViewModel = viewModel()
 ) {
-    // Initialize with the session ID
-    LaunchedEffect(sessionId) {
-        viewModel.getExercisesForSession(sessionId)
-    }
+    // State management
+    LaunchedEffect(exerciseId) { viewModel.getExerciseDetail(exerciseId) }
+    val exercise by viewModel.detail.collectAsState()
 
-    val exercises by viewModel.exercises.collectAsState()
-    val currentExercise = remember(exercises, exerciseId) {
-        exercises.find { it.id == exerciseId }
-    }
-
-    var description by remember { mutableStateOf("") }
-    var isEditing by remember { mutableStateOf(false) }
+    var localSets by remember { mutableIntStateOf(0) }
+    var localReps by remember { mutableIntStateOf(0) }
+    var localWeight by remember { mutableFloatStateOf(0f) }
+    var localDescription by remember { mutableStateOf("") }
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
-    // Update description when exercise changes
-    LaunchedEffect(currentExercise) {
-        description = currentExercise?.exercise?.description ?: ""
+    // Initialize state
+    LaunchedEffect(exercise) {
+        exercise?.exercise?.let {
+            localSets = it.sets
+            localReps = it.reps
+            localWeight = it.weight
+            localDescription = it.description
+        }
     }
 
     Scaffold(
+        modifier = Modifier.fillMaxSize(),
         topBar = {
-            TopAppBar(
-                title = { Text(currentExercise?.exercise?.exerciseName ?: "Workout Details") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
+            ExerciseTopBar(
+                exerciseName = exercise?.exercise?.exerciseName,
+                onBackClick = { navController.popBackStack() },
+                onDeleteClick = { showDeleteConfirm = true }
             )
         }
     ) { innerPadding ->
@@ -56,134 +69,72 @@ fun ExerciseScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            if (isEditing) {
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Description") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    maxLines = 5
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row {
-                    Button(
-                        onClick = {
-                            currentExercise?.let { exercise ->
-                                viewModel.updateExercise(
-                                    exerciseId = exercise.id,
-                                    exercise = exercise.exercise.copy(description = description)
-                                )
-                            }
-                            isEditing = false
-                        }
-                    ) {
-                        Text("Save Changes")
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    OutlinedButton(
-                        onClick = {
-                            description = currentExercise?.exercise?.description ?: ""
-                            isEditing = false
-                        }
-                    ) {
-                        Text("Cancel")
+            ExerciseDescriptionField(
+                description = localDescription,
+                currentDescription = exercise?.exercise?.description,
+                onDescriptionChange = { localDescription = it },
+                onSaveDescription = {
+                    exercise?.let {
+                        viewModel.updateDescription(it.id, localDescription)
                     }
                 }
-            } else {
-                Text(
-                    text = "Description:",
-                    style = MaterialTheme.typography.labelLarge
-                )
+            )
 
-                Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-                Text(
-                    text = currentExercise?.exercise?.description ?: "No description provided",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+            ExerciseStatsSection(
+                sets = localSets,
+                reps = localReps,
+                weight = localWeight,
+                onSetsChange = { localSets = it as Int },
+                onRepsChange = { localReps = it as Int },
+                onWeightChange = { localWeight = it as Float }
+            )
 
-                currentExercise?.exercise?.let { exercise ->
-                    Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-                    Text(
-                        text = "Details:",
-                        style = MaterialTheme.typography.labelLarge
-                    )
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = "Sets: ${exercise.sets}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    Text(
-                        text = "Reps: ${exercise.reps}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    Text(
-                        text = "Weight: ${exercise.weight}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = { isEditing = true },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Edit, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Edit Description")
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedButton(
-                    onClick = { showDeleteConfirm = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Icon(Icons.Default.Delete, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Delete Exercise")
-                }
-            }
-        }
-
-        if (showDeleteConfirm) {
-            AlertDialog(
-                onDismissRequest = { showDeleteConfirm = false },
-                title = { Text("Confirm Delete") },
-                text = { Text("Are you sure you want to delete this exercise?") },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            viewModel.deleteExercise(exerciseId)
-                            navController.popBackStack()
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
+            SaveButton(
+                enabled = exercise?.let {
+                    it.exercise.sets != localSets ||
+                            it.exercise.reps != localReps ||
+                            it.exercise.weight != localWeight
+                } ?: false,
+                onClick = {
+                    exercise?.let {
+                        viewModel.updateExerciseStats(
+                            exerciseId = it.id,
+                            sets = localSets,
+                            reps = localReps,
+                            weight = localWeight
                         )
-                    ) {
-                        Text("Delete")
                     }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteConfirm = false }) {
-                        Text("Cancel")
-                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            ShowGraphButton(
+                onClick = {
+                    // Handle graph button click
                 }
             )
         }
     }
+
+    DeleteDialog(
+        showDialog = showDeleteConfirm,
+        onDismiss = { showDeleteConfirm = false },
+        onConfirm = {
+            exercise?.let {
+                viewModel.deleteExercise(
+                    exerciseId = it.id,
+                    sessionId = sessionId,
+                    onSuccess = {
+                        navController.popBackStack()
+                        showDeleteConfirm = false
+                    }
+                )
+            }
+        }
+    )
 }

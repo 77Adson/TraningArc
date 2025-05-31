@@ -1,11 +1,10 @@
 package com.example.trainingarc.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -66,11 +65,20 @@ data class AppSizes(
         val navBarHeight: Dp = 64.dp,
         val cardHeight: Dp = 80.dp,
         val smallCardHeight: Dp = 60.dp,
-        val cardWidth: Dp = 160.dp
+        val cardWidth: Dp = 160.dp,
+        val largeCardWidth: Dp = 270.dp,
     )
 }
 
 val LocalSizes = staticCompositionLocalOf { AppSizes() }
+
+// Add this to expose custom shapes
+val LocalAppShapes = staticCompositionLocalOf { AppShapes }
+
+val MaterialTheme.appShapes: Shapes
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAppShapes.current
 
 val MaterialTheme.sizes: AppSizes
     @Composable
@@ -80,10 +88,8 @@ val MaterialTheme.sizes: AppSizes
 @Composable
 fun TrainingArcTheme(
     darkTheme: Boolean = true,
-    // Keep disabled for now
     content: @Composable () -> Unit
 ) {
-    // Always use our custom colors, ignoring dynamic colors
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     val appSizes = AppSizes()
 
@@ -95,7 +101,8 @@ fun TrainingArcTheme(
             typography = Typography,
             content = content,
             shapes = AppShapes
-            )
+        )
     }
 }
+
 
