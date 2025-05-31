@@ -26,6 +26,7 @@ import com.example.trainingarc.features.homePage.screens.exerciseScreenComponent
 import com.example.trainingarc.features.homePage.screens.exerciseScreenComponents.SaveButton
 import com.example.trainingarc.features.homePage.screens.exerciseScreenComponents.ShowGraphButton
 import com.example.trainingarc.features.homePage.viewmodel.ExerciseViewModel
+import com.example.trainingarc.navigation.Routes
 
 @Composable
 fun ExerciseScreen(
@@ -115,7 +116,9 @@ fun ExerciseScreen(
 
             ShowGraphButton(
                 onClick = {
-                    // Handle graph button click
+                    exercise?.let {
+                        navController.navigate(Routes.ProgressChart.createRoute(it.id))
+                    }
                 }
             )
         }

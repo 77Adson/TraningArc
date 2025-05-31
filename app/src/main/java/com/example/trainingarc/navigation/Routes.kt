@@ -29,4 +29,8 @@ sealed class Routes(val route: String) {
         // List of just the route strings for easy checking
         val bottomNavRoutes = bottomNavItems.map { it.route }
     }
+
+    data object ProgressChart : Routes("progress_chart/{exerciseId}") {
+        fun createRoute(exerciseId: String) = "progress_chart/$exerciseId"
+    }
 }

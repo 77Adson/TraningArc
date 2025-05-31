@@ -1,10 +1,16 @@
 package com.example.trainingarc.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -20,9 +26,12 @@ import com.example.trainingarc.features.auth.screens.RegisterScreen
 import com.example.trainingarc.features.auth.viewmodel.AuthViewModel
 import com.example.trainingarc.features.components.BottomNavigationBar
 import com.example.trainingarc.features.friendsPage.screens.FriendsScreen
+import com.example.trainingarc.features.homePage.model.Exercise
+import com.example.trainingarc.features.homePage.model.ExerciseWithId
 import com.example.trainingarc.features.homePage.screens.HomeScreen
 import com.example.trainingarc.features.homePage.screens.ExerciseScreen
 import com.example.trainingarc.features.homePage.screens.ExerciseListScreen
+import com.example.trainingarc.features.homePage.screens.ProgressChartScreen
 import com.example.trainingarc.features.homePage.viewmodel.ExerciseViewModel
 import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 import com.example.trainingarc.features.profilePage.screens.ProfileScreen
@@ -141,6 +150,27 @@ fun NavGraph(
                     exerciseId = exerciseId,
                     viewModel = viewModel,
                     navController = navController
+                )
+            }
+            composable(
+                route = Routes.ProgressChart.route,
+                arguments = listOf(navArgument("exerciseId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val exerciseId = backStackEntry.arguments?.getString("exerciseId") ?: ""
+                val parentEntry = remember(backStackEntry) {
+                    navController.getBackStackEntry(Routes.WorkoutDetail.route)
+                }
+                val parentViewModel: ExerciseViewModel = viewModel(parentEntry)
+
+                LaunchedEffect(exerciseId) {
+                    parentViewModel.getExerciseDetail(exerciseId)
+                }
+
+                val exercise by parentViewModel.detail.collectAsState()
+
+                ProgressChartScreen(
+                    exercise = exercise ?: ExerciseWithId(exerciseId, Exercise()),
+                    modifier = Modifier.padding(innerPadding)
                 )
             }
         }
