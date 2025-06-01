@@ -1,44 +1,48 @@
 package com.example.trainingarc.features.homePage.screens
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
-import com.example.trainingarc.features.homePage.model.ExerciseWithId
-import com.example.trainingarc.features.homePage.viewmodel.ChartEntry
-import com.example.trainingarc.features.homePage.viewmodel.ProgressChartState
-import com.example.trainingarc.features.homePage.viewmodel.ProgressChartViewModel
-import com.example.trainingarc.ui.theme.AppSizes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.example.trainingarc.features.homePage.model.ExerciseWithId
+import com.example.trainingarc.features.homePage.screens.progresChartComponents.LineChart
+import com.example.trainingarc.features.homePage.screens.progresChartComponents.SummaryStatisticsCard
+import com.example.trainingarc.features.homePage.viewmodel.ChartEntry
+import com.example.trainingarc.features.homePage.viewmodel.ProgressChartState
+import com.example.trainingarc.features.homePage.viewmodel.ProgressChartViewModel
+import com.example.trainingarc.ui.theme.AppShapes
+import com.example.trainingarc.ui.theme.pill
+import com.example.trainingarc.ui.theme.sizes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,18 +59,24 @@ fun ProgressChartScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Progres: ${exercise.exerciseName}") },
+                title = {
+                    Text(
+                        "Progress: ${exercise.exerciseName}",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Wróć"
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.primary
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
         }
@@ -78,12 +88,80 @@ fun ProgressChartScreen(
             contentAlignment = Alignment.Center
         ) {
             when (val state = uiState) {
-                is ProgressChartState.Loading -> CircularProgressIndicator()
-                is ProgressChartState.Empty -> Text("Brak danych historycznych")
-                is ProgressChartState.Error -> Text("Błąd: ${state.message}")
-                is ProgressChartState.Success -> ChartContent(state.data)
+                is ProgressChartState.Loading -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        CircularProgressIndicator()
+                        Text("Loading progress data...")
+                    }
+                }
+                is ProgressChartState.Empty -> {
+                    EmptyStateMessage()
+                }
+                is ProgressChartState.Error -> {
+                    ErrorStateMessage(state.message)
+                }
+                is ProgressChartState.Success -> {
+                    ChartContent(state.data)
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun EmptyStateMessage() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(16.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.History,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            modifier = Modifier.size(48.dp)
+        )
+        Text(
+            text = "No Historical Data",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = "Complete this exercise a few times to see your progress chart",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+private fun ErrorStateMessage(error: String) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(16.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Error,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(48.dp)
+        )
+        Text(
+            text = "Error Loading Data",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.error
+        )
+        Text(
+            text = error,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -102,138 +180,49 @@ private fun ChartContent(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
-        Text(
-            text = "Historia progresu",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Card(
-            elevation = CardDefaults.cardElevation(4.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            ),
-            modifier = Modifier.fillMaxWidth()
+        // Header
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.medium)
+                .background(MaterialTheme.colorScheme.surface)
+                .fillMaxWidth()
+                .padding(MaterialTheme.sizes.spacing.medium)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                // Statystyki podsumowujące
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    StatisticItem(
-                        label = "Min",
-                        value = "${data.minByOrNull { it.score }?.score?.toInt() ?: 0}"
-                    )
-                    StatisticItem(
-                        label = "Max",
-                        value = "${data.maxByOrNull { it.score }?.score?.toInt() ?: 0}"
-                    )
-                    StatisticItem(
-                        label = "Średnia",
-                        value = "${averageScore.toInt()}"
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                LineChart(data = data)
-            }
-        }
-    }
-}
-
-@Composable
-fun StatisticItem(label: String, value: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-    }
-}
-
-@Composable
-fun LineChart(
-    data: List<ChartEntry>,
-    modifier: Modifier = Modifier
-) {
-    val colorScheme = MaterialTheme.colorScheme
-
-    val maxScore = data.maxOfOrNull { it.score } ?: 0f
-    val minScore = data.minOfOrNull { it.score } ?: 0f
-    val range = maxScore - minScore
-    val padding = if (range > 0) range * 0.1f else 10f // 10% padding
-
-    Canvas(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(250.dp)
-    ) {
-        if (data.isEmpty()) return@Canvas
-
-        val width = size.width
-        val height = size.height
-        val stepX = if (data.size > 1) width / (data.size - 1) else width
-        val scaleY = if (maxScore - minScore + 2 * padding > 0) {
-            height / (maxScore - minScore + 2 * padding)
-        } else { 1f }
-
-        // Rysowanie osi
-        drawLine(
-            start = Offset(0f, height),
-            end = Offset(width, height),
-            color = Color.Gray.copy(alpha = 0.5f),
-            strokeWidth = 1.dp.toPx()
-        )
-
-        // Rysowanie linii progresu
-        val path = Path().apply {
-            moveTo(0f, height - (data[0].score - minScore + padding) * scaleY)
-            data.forEachIndexed { index, entry ->
-                val x = index * stepX
-                val y = height - (entry.score - minScore + padding) * scaleY
-                lineTo(x, y)
-            }
-        }
-
-        drawPath(
-            path = path,
-            color = colorScheme.primary,
-            style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
-        )
-
-        // Rysowanie punktów
-        data.forEachIndexed { index, entry ->
-            val x = index * stepX
-            val y = height - (entry.score - minScore + padding) * scaleY
-            drawCircle(
-                color = colorScheme.primary,
-                radius = 6.dp.toPx(),
-                center = Offset(x, y)
+            Text(
+                text = "Progress History",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface
             )
+            Text(
+                text = "${data.size} records available",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            )
+        }
 
-            // Etykiety daty (co 2 punkt lub jeśli mało punktów)
-            if (data.size <= 5 || index % 2 == 0) {
-                drawContext.canvas.nativeCanvas.apply {
-                    drawText(
-                        entry.formattedDate,
-                        x,
-                        height - 8.dp.toPx(),
-                        android.graphics.Paint().apply {
-                            color = android.graphics.Color.GRAY
-                            textSize = 12.sp.toPx()
-                            textAlign = android.graphics.Paint.Align.CENTER
-                        }
-                    )
-                }
+        // Summary Card
+        SummaryStatisticsCard(
+            minValue = data.minByOrNull { it.score }?.score?.toInt() ?: 0,
+            maxValue = data.maxByOrNull { it.score }?.score?.toInt() ?: 0,
+            averageValue = averageScore.toInt()
+        )
+
+        // Chart Card
+        Card(
+            elevation = CardDefaults.cardElevation(8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            Column(modifier = Modifier
+                .padding(MaterialTheme.sizes.spacing.large))
+            {
+                LineChart(data = data)
             }
         }
     }
