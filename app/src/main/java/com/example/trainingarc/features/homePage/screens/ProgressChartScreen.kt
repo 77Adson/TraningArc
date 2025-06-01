@@ -220,7 +220,7 @@ private fun ChartContent(
                 .fillMaxWidth()
         ) {
             Column(modifier = Modifier
-                .padding(MaterialTheme.sizes.spacing.large))
+                .padding(vertical = MaterialTheme.sizes.spacing.small ,horizontal = MaterialTheme.sizes.spacing.medium))
             {
                 LineChart(data = data)
             }

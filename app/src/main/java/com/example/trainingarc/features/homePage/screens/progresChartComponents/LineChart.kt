@@ -31,7 +31,7 @@ fun LineChart(
     val minScore = data.minOf { it.score }.toFloat()
     val range = maxScore - minScore
 
-    val labelTextSize = 12.sp
+    val labelTextSize = 14.sp
     val labelPaint = android.graphics.Paint().apply {
         color = colorScheme.onSurface.copy(alpha = 0.7f).toArgb()
         textSize = with(LocalDensity.current) { labelTextSize.toPx() }
@@ -40,7 +40,10 @@ fun LineChart(
 
     val yAxisLabels = listOf(minScore, (minScore + maxScore) / 2f, maxScore)
     val maxLabelWidth = yAxisLabels.maxOf { labelPaint.measureText("%.1f".format(it)) }
-    val yLabelWidth = maxLabelWidth + with(LocalDensity.current) { 8.dp.toPx() }
+
+    val yLabelToLinePadding = with(LocalDensity.current) { 4.dp.toPx() }
+    val yLabelWidth = maxLabelWidth + with(LocalDensity.current) { 8.dp.toPx() } + yLabelToLinePadding
+
 
     val verticalPadding = if (range > 0) range * 0.2f else maxScore * 0.2f
     val bottomPadding = with(LocalDensity.current) { 32.dp.toPx() }
@@ -74,12 +77,11 @@ fun LineChart(
             val yPosition = canvasHeight - bottomPadding - (score - minScore + verticalPadding) * yScale
             val boundedY = yPosition.coerceIn(
                 topPadding + labelPaint.textSize,
-                canvasHeight - bottomPadding - labelPaint.textSize/2
+                canvasHeight - bottomPadding - labelPaint.textSize / 2
             )
-
             drawContext.canvas.nativeCanvas.drawText(
                 "%.1f".format(score),
-                yLabelWidth - with(density) { 8.dp.toPx() },
+                yLabelWidth - yLabelToLinePadding - with(density) { 8.dp.toPx() },
                 boundedY + (labelPaint.textSize / 3),
                 labelPaint
             )
@@ -135,22 +137,27 @@ fun LineChart(
                 canvasHeight - bottomPadding - with(density) { 8.dp.toPx() }
             )
 
+            // Determine if this is the last point
+            val isLastPoint = index == data.size - 1
+            val pointColor = if (isLastPoint) colorScheme.tertiary else colorScheme.primary
+
             drawCircle(
-                color = Color.White,
+                color = Color.White, // Outer circle stroke remains white or as desired
                 radius = with(density) { 8.dp.toPx() },
                 center = Offset(x, y),
                 style = Stroke(width = with(density) { 2.dp.toPx() })
             )
 
             drawCircle(
-                color = colorScheme.primary,
+                color = pointColor, // Use determined color
                 radius = with(density) { 6.dp.toPx() },
                 center = Offset(x, y)
             )
 
             if (shouldDrawDateLabel(index, data.size)) {
+                val dateLabelColor = colorScheme.onSurface.copy(alpha = 0.8f)
                 val datePaint = android.graphics.Paint().apply {
-                    color = colorScheme.onSurface.copy(alpha = 0.8f).toArgb()
+                    color = dateLabelColor.toArgb() // Use determined color
                     textSize = with(density) { labelTextSize.toPx() }
                     textAlign = android.graphics.Paint.Align.CENTER
                 }
@@ -158,7 +165,7 @@ fun LineChart(
                 val dateText = entry.formattedDate
                 val dateY = canvasHeight - with(density) { 8.dp.toPx() }
 
-                if (datePaint.measureText(dateText) <= xScale) {
+                if (datePaint.measureText(dateText) <= xScale || isLastPoint) { // Ensure last label is drawn even if it might overlap slightly
                     drawContext.canvas.nativeCanvas.drawText(
                         dateText,
                         x.coerceIn(chartStartX, chartEndX),
@@ -175,6 +182,6 @@ private fun shouldDrawDateLabel(index: Int, dataSize: Int): Boolean {
     return when {
         dataSize <= 5 -> true
         dataSize <= 10 -> index % 2 == 0
-        else -> index % 3 == 0
+        else -> index % 3 == 0 || index == dataSize -1 // Ensure last label is considered
     }
 }
