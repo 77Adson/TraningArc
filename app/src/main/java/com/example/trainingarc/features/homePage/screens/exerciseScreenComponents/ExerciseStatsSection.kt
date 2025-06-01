@@ -47,7 +47,8 @@ fun ExerciseStatsSection(
             label = "Weight (kg)",
             value = weight,
             onValueChange = onWeightChange,
-            isFloat = true
+            isFloat = true,
+            delta = 2.5f
         )
     }
 }

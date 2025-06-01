@@ -46,7 +46,7 @@ fun EditableNumberField(
     onValueChange: (Number) -> Unit,
     modifier: Modifier = Modifier,
     isFloat: Boolean = false,
-    delta: Int = 1
+    delta: Float = 1f
 ) {
     var textValue by remember { mutableStateOf(value.toString()) }
 
@@ -78,10 +78,10 @@ fun EditableNumberField(
             IconButton(
                 onClick = {
                     if (isFloat) {
-                        val newValue = (value.toFloat() - 1f).coerceAtLeast(0f)
+                        val newValue = (value.toFloat() - delta).coerceAtLeast(0f)
                         onValueChange(newValue)
                     } else {
-                        val newValue = (value.toInt() - 1).coerceAtLeast(0)
+                        val newValue = (value.toInt() - delta.toInt()).coerceAtLeast(0)
                         onValueChange(newValue)
                     }
                 }
@@ -144,9 +144,9 @@ fun EditableNumberField(
             IconButton(
                 onClick = {
                     if (isFloat) {
-                        onValueChange(value.toFloat() + 1f)
+                        onValueChange(value.toFloat() + delta)
                     } else {
-                        onValueChange(value.toInt() + 1)
+                        onValueChange(value.toInt() + delta.toInt())
                     }
                 }
             ) {
