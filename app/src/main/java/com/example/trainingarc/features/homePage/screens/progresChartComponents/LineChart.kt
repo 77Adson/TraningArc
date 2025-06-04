@@ -44,7 +44,6 @@ fun LineChart(
     val yLabelToLinePadding = with(LocalDensity.current) { 4.dp.toPx() }
     val yLabelWidth = maxLabelWidth + with(LocalDensity.current) { 8.dp.toPx() } + yLabelToLinePadding
 
-
     val verticalPadding = if (range > 0) range * 0.2f else maxScore * 0.2f
     val bottomPadding = with(LocalDensity.current) { 32.dp.toPx() }
     val topPadding = with(LocalDensity.current) { 16.dp.toPx() }
@@ -73,6 +72,7 @@ fun LineChart(
             1f
         }
 
+        // Rysowanie etykiet osi Y
         yAxisLabels.forEach { score ->
             val yPosition = canvasHeight - bottomPadding - (score - minScore + verticalPadding) * yScale
             val boundedY = yPosition.coerceIn(
@@ -87,6 +87,7 @@ fun LineChart(
             )
         }
 
+        // Rysowanie linii siatki
         val gridLinePaint = android.graphics.Paint().apply {
             color = colorScheme.onSurface.copy(alpha = 0.1f).toArgb()
             strokeWidth = with(density) { 1.dp.toPx() }
@@ -103,6 +104,7 @@ fun LineChart(
             )
         }
 
+        // Rysowanie osi X
         drawLine(
             start = Offset(chartStartX, canvasHeight - bottomPadding),
             end = Offset(chartEndX, canvasHeight - bottomPadding),
@@ -110,6 +112,7 @@ fun LineChart(
             strokeWidth = with(density) { 1.dp.toPx() }
         )
 
+        // Rysowanie linii wykresu
         val path = Path().apply {
             val firstX = chartStartX
             val firstY = canvasHeight - bottomPadding - (data[0].score.toFloat() - minScore + verticalPadding) * yScale
@@ -128,6 +131,7 @@ fun LineChart(
             style = Stroke(width = with(density) { 3.dp.toPx() }, cap = StrokeCap.Round)
         )
 
+        // Rysowanie punktów i etykiet dat
         data.forEachIndexed { index, entry ->
             val x = chartStartX + index * xScale
             var y = canvasHeight - bottomPadding - (entry.score.toFloat() - minScore + verticalPadding) * yScale
@@ -137,27 +141,28 @@ fun LineChart(
                 canvasHeight - bottomPadding - with(density) { 8.dp.toPx() }
             )
 
-            // Determine if this is the last point
             val isLastPoint = index == data.size - 1
             val pointColor = if (isLastPoint) colorScheme.tertiary else colorScheme.primary
 
+            // Rysowanie punktów
             drawCircle(
-                color = Color.White, // Outer circle stroke remains white or as desired
+                color = Color.White,
                 radius = with(density) { 8.dp.toPx() },
                 center = Offset(x, y),
                 style = Stroke(width = with(density) { 2.dp.toPx() })
             )
 
             drawCircle(
-                color = pointColor, // Use determined color
+                color = pointColor,
                 radius = with(density) { 6.dp.toPx() },
                 center = Offset(x, y)
             )
 
-            if (shouldDrawDateLabel(index, data.size)) {
+            // Rysowanie etykiet dat (tylko pierwsza i ostatnia)
+            if (index == 0 || index == data.size - 1) {
                 val dateLabelColor = colorScheme.onSurface.copy(alpha = 0.8f)
                 val datePaint = android.graphics.Paint().apply {
-                    color = dateLabelColor.toArgb() // Use determined color
+                    color = dateLabelColor.toArgb()
                     textSize = with(density) { labelTextSize.toPx() }
                     textAlign = android.graphics.Paint.Align.CENTER
                 }
@@ -165,14 +170,12 @@ fun LineChart(
                 val dateText = entry.formattedDate
                 val dateY = canvasHeight - with(density) { 8.dp.toPx() }
 
-                if (datePaint.measureText(dateText) <= xScale || isLastPoint) { // Ensure last label is drawn even if it might overlap slightly
-                    drawContext.canvas.nativeCanvas.drawText(
-                        dateText,
-                        x.coerceIn(chartStartX, chartEndX),
-                        dateY,
-                        datePaint
-                    )
-                }
+                drawContext.canvas.nativeCanvas.drawText(
+                    dateText,
+                    x.coerceIn(chartStartX, chartEndX),
+                    dateY,
+                    datePaint
+                )
             }
         }
     }
