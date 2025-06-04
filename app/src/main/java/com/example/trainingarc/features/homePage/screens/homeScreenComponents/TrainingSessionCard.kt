@@ -78,6 +78,7 @@ private fun SessionCardHeader(
     }
 }
 
+
 @Composable
 private fun SessionTitle(
     name: String,

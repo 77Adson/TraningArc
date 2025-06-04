@@ -33,17 +33,23 @@ fun BottomNavigationBar(navController: NavController) {
         contentColor = MaterialTheme.colorScheme.onSurface
     ) {
         items.forEach { screen ->
+            val isEnabled = when (screen) {
+                Routes.Friends, Routes.Settings -> false // Disable Friends and Settings
+                else -> true // Enable all other items
+            }
             NavigationBarItem(
                 icon = {
                     Icon(
                         painter = painterResource(id = getIconRes(screen)),
                         contentDescription = screen.route,
                         modifier = Modifier
-                            .size(MaterialTheme.sizes.icons.extraLarge)
+                            .size(MaterialTheme.sizes.icons.extraLarge),
+
                     )
                 },
                 selected = currentRoute == screen.route,
                 onClick = { navigateToScreen(navController, screen) },
+                enabled = isEnabled,
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = MaterialTheme.colorScheme.tertiary,
                     unselectedIconColor = MaterialTheme.colorScheme.onBackground,

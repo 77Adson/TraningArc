@@ -27,6 +27,10 @@ import com.example.trainingarc.features.homePage.screens.exerciseScreenComponent
 import com.example.trainingarc.features.homePage.screens.exerciseScreenComponents.ShowGraphButton
 import com.example.trainingarc.features.homePage.viewmodel.ExerciseViewModel
 import com.example.trainingarc.navigation.Routes
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import androidx.compose.runtime.derivedStateOf
 
 @Composable
 fun ExerciseScreen(
@@ -44,6 +48,14 @@ fun ExerciseScreen(
     var localWeight by remember { mutableFloatStateOf(0f) }
     var localDescription by remember { mutableStateOf("") }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    // Check if there's history for today
+    val hasHistoryForToday by remember(exercise) {
+        derivedStateOf {
+            val dateKey = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+            exercise?.exercise?.history?.containsKey(dateKey) ?: false
+        }
+    }
 
     // Initialize state
     LaunchedEffect(exercise) {
@@ -97,8 +109,9 @@ fun ExerciseScreen(
             SaveButton(
                 enabled = exercise?.let {
                     it.exercise.sets != localSets ||
-                            it.exercise.reps != localReps ||
-                            it.exercise.weight != localWeight
+                    it.exercise.reps != localReps ||
+                    it.exercise.weight != localWeight ||
+                    !hasHistoryForToday
                 } ?: false,
                 onClick = {
                     exercise?.let {
