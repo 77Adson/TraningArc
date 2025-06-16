@@ -1,7 +1,5 @@
 # TrainingArc App
 
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-
 A fitness tracking application for monitoring workout progress with clean UI and real-time synchronization.
 
 ## Features
@@ -58,13 +56,25 @@ ui/ # Theme and design components
   }
 }
 ```
+
 ## Screenshots
 
+### Featured Screen: Exercise Tracking
 <div align="center">
-  <img src="https://i.imgur.com/placeholder1.png" alt="Exercise Screen" width="30%">
-  <img src="https://i.imgur.com/placeholder2.png" alt="Progress Chart" width="30%">
-  <img src="https://i.imgur.com/placeholder3.png" alt="Workout List" width="30%">
+  <img src="https://i.imgur.com/vFUa4GB.png" alt="Exercise Screen" width="50%" style="display: block; margin: 0 auto;">
 </div>
+
+
+*Detailed exercise view with stats tracking*
+
+---
+
+### Key Features  
+| Progress Analytics | Workout Management | Home Dashboard |
+|--------------------|--------------------|----------------|
+| ![Progress](https://i.imgur.com/RDP0eg7.png) | ![Workouts](https://i.imgur.com/YMJxq25.png) | ![Home](https://i.imgur.com/K2AvSUv.png) |
+
+
 
 ## Future Plans
 
@@ -77,8 +87,8 @@ ui/ # Theme and design components
 
 | Contributor       | Role(s)                          |  
 |-------------------|----------------------------------|  
-| **Person1**       | UI/UX, Jetpack Compose, Backend, Firebase |  
-| **Person2**       | Backend, Firebase                |  
+| **Adrian** (GitHub: [@77Adson](https://github.com/77Adson)) | UI/UX, Jetpack Compose, Backend, Firebase |  
+| **Dawid** (GitHub: [@Skruuki](https://github.com/Skruuki))       | Backend, Firebase                |  
 
 ## License
 
