@@ -15,6 +15,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.trainingarc.features.homePage.model.Exercise
 import com.example.trainingarc.features.homePage.model.ExerciseWithId
+import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.AddExistingExercisesSheet
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.AddWorkoutDialog
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.DeleteSessionDialog
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.DeleteWorkoutDialog
@@ -25,6 +26,8 @@ import com.example.trainingarc.features.homePage.screens.exerciseListScreenCompo
 import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 import com.example.trainingarc.navigation.Routes
 import com.example.trainingarc.ui.theme.sizes
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
 
 @Composable
 fun ExerciseListScreen(
@@ -34,6 +37,10 @@ fun ExerciseListScreen(
 ) {
     val exercises by viewModel.exercises.collectAsState()
     val currentSession by viewModel.currentSession.collectAsState()
+
+    var showExistingExercises by remember { mutableStateOf(false) }
+    val allExercises by viewModel.allExercises.collectAsState()
+    val currentUser = Firebase.auth.currentUser // Get current user
 
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -55,9 +62,14 @@ fun ExerciseListScreen(
         },
         floatingActionButton = {
             FloatingAddButton(
-                onPrimaryClick = { /* Toggle visibility */ },
+                onPrimaryClick = { /* existing */ },
                 onCreateClick = { showAddDialog = true },
-                onAddExistingClick = { /* Handle existing */ }
+                onAddExistingClick = {
+                    currentUser?.uid?.let { userId ->
+                        viewModel.loadAllUserExercises(userId)
+                        showExistingExercises = true
+                    }
+                }
             )
         }
     ) { innerPadding ->
@@ -83,6 +95,18 @@ fun ExerciseListScreen(
             modifier = Modifier
                 .padding(innerPadding)
                 .padding(horizontal = MaterialTheme.sizes.spacing.medium)
+        )
+
+        AddExistingExercisesSheet(
+            show = showExistingExercises,
+            exercises = allExercises,
+            onDismiss = { showExistingExercises = false },
+            onExerciseSelected = { exerciseId ->
+                currentUser?.uid?.let { userId ->
+                    viewModel.addExistingExerciseToSession(userId, sessionId, exerciseId)
+                }
+                showExistingExercises = false
+            }
         )
     }
 

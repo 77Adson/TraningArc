@@ -1,5 +1,6 @@
 package com.example.trainingarc.features.homePage.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
@@ -10,20 +11,28 @@ import com.google.firebase.database.ValueEventListener
 import com.example.trainingarc.features.homePage.model.Exercise
 import com.example.trainingarc.features.homePage.model.ExerciseWithId
 import com.example.trainingarc.features.homePage.model.TrainingSession
+import com.google.firebase.Firebase
+import com.google.firebase.database.GenericTypeIndicator
+import com.google.firebase.database.database
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class ExercisesListViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
     private val database = FirebaseDatabase.getInstance().reference
 
+    private val _currentSession = MutableStateFlow<TrainingSession?>(null)
+    val currentSession: StateFlow<TrainingSession?> = _currentSession.asStateFlow()
+
+    // Should be StateFlow or Flow
     private val _exercises = MutableStateFlow<List<ExerciseWithId>>(emptyList())
     val exercises: StateFlow<List<ExerciseWithId>> = _exercises.asStateFlow()
 
-    private val _currentSession = MutableStateFlow<TrainingSession?>(null)
-    val currentSession: StateFlow<TrainingSession?> = _currentSession.asStateFlow()
+    private val _allExercises = MutableStateFlow<List<ExerciseWithId>>(emptyList())
+    val allExercises: StateFlow<List<ExerciseWithId>> = _allExercises.asStateFlow()
 
     private var currentSessionId: String? = null
     private var exercisesListener: ValueEventListener? = null
@@ -179,4 +188,62 @@ class ExercisesListViewModel : ViewModel() {
             }
         }
     }
+
+
+    fun loadAllUserExercises(userId: String) {
+        viewModelScope.launch {
+            try {
+                val snapshot = Firebase.database.reference
+                    .child("users")
+                    .child(userId)
+                    .child("exercises")
+                    .get()
+                    .await()
+
+                // Get IDs of exercises already in current session
+                val currentExerciseIds = _exercises.value.map { it.id }.toSet()
+
+                _allExercises.value = snapshot.children.mapNotNull { child ->
+                    val exerciseId = child.key ?: return@mapNotNull null
+                    if (exerciseId !in currentExerciseIds) {
+                        val exercise = child.getValue(Exercise::class.java)
+                        exercise?.let { ExerciseWithId(exerciseId, it) }
+                    } else {
+                        null
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("ExercisesListViewModel", "Error loading exercises", e)
+            }
+        }
+    }
+
+    fun addExistingExerciseToSession(userId: String, sessionId: String, exerciseId: String) {
+        viewModelScope.launch {
+            try {
+                val sessionRef = Firebase.database.reference
+                    .child("users")
+                    .child(userId)
+                    .child("sessions")
+                    .child(sessionId)
+
+                val currentExercises = sessionRef.child("sessionExercises")
+                    .get()
+                    .await()
+                    .getValue(object : GenericTypeIndicator<Map<String, Int>>() {})
+                    ?: emptyMap()
+
+                val updatedExercises = currentExercises.toMutableMap().apply {
+                    put(exerciseId, (this.values.maxOrNull() ?: 0) + 1)
+                }
+
+                sessionRef.child("sessionExercises").setValue(updatedExercises)
+                getExercisesForSession(sessionId) // Refresh the current list
+            } catch (e: Exception) {
+                Log.e("ExercisesListViewModel", "Error adding exercise", e)
+                // Handle error
+            }
+        }
+    }
+
 }
