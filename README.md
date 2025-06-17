@@ -17,17 +17,6 @@ A fitness tracking application for monitoring workout progress with clean UI and
 - **Authentication**: Firebase Auth
 - **Architecture**: MVVM with Android Jetpack components
 
-## Project Structure
-
-features/
-├── auth/ # Authentication module
-├── homePage/ # Main workout screens
-├── profilePage/ # User profile
-└── settingsPage/ # App settings
-navigation/ # App navigation
-ui/ # Theme and design components
-
-
 ## Firebase Database Structure
 
 ```json
