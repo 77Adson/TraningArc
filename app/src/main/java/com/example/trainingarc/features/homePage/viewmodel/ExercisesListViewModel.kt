@@ -145,8 +145,8 @@ class ExercisesListViewModel : ViewModel() {
                 val sessionId = currentSessionId ?: return@launch
 
                 // Remove from exercises collection
-                database.child("users/$userId/exercises/$exerciseId")
-                    .removeValue()
+//                database.child("users/$userId/exercises/$exerciseId")
+//                    .removeValue()
 
                 // Remove from current session
                 database.child("users/$userId/sessions/$sessionId/sessionExercises/$exerciseId")
