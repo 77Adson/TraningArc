@@ -73,7 +73,7 @@ fun ExerciseListScreen(
         }
     ) { innerPadding ->
         ExerciseListScreenContent(
-            exercises = exercises.sortedBy { it.exercise.exerciseName },
+            exercises = exercises.sortedBy { it.order },
             onExerciseClick = { exerciseId ->
                 navController.navigate(
                     Routes.WorkoutDetail.createRoute(
