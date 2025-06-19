@@ -23,7 +23,8 @@ data class Exercise(
 
 data class ExerciseWithId(
     val id: String,
-    val exercise: Exercise
+    val exercise: Exercise,
+    val order: Int = 0
 ) {
     val exerciseName get() = exercise.exerciseName
     val weight get() = exercise.weight

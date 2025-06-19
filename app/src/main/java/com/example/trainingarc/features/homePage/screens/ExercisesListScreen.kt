@@ -20,8 +20,8 @@ import com.example.trainingarc.features.homePage.screens.exerciseListScreenCompo
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.DeleteSessionDialog
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.DeleteWorkoutDialog
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.EditWorkoutDialog
+import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.ExerciseListScreenContent
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.FloatingAddButton
-import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.WorkoutListScreenContent
 import com.example.trainingarc.features.homePage.screens.exerciseListScreenComponents.WorkoutListTopBar
 import com.example.trainingarc.features.homePage.viewmodel.ExercisesListViewModel
 import com.example.trainingarc.navigation.Routes
@@ -36,7 +36,6 @@ fun ExerciseListScreen(
     viewModel: ExercisesListViewModel = viewModel()
 ) {
     val exercises by viewModel.exercises.collectAsState()
-    val currentSession by viewModel.currentSession.collectAsState()
 
     var showExistingExercises by remember { mutableStateOf(false) }
     val allExercises by viewModel.allExercises.collectAsState()
@@ -66,16 +65,16 @@ fun ExerciseListScreen(
                 onCreateClick = { showAddDialog = true },
                 onAddExistingClick = {
                     currentUser?.uid?.let { userId ->
-                        viewModel.loadAllUserExercises(userId)
+                        viewModel.loadAllUserExercises(userId, sessionId)
                         showExistingExercises = true
                     }
                 }
             )
         }
     ) { innerPadding ->
-        WorkoutListScreenContent(
-            workouts = exercises,
-            onWorkoutClick = { exerciseId ->
+        ExerciseListScreenContent(
+            exercises = exercises.sortedBy { it.exercise.exerciseName },
+            onExerciseClick = { exerciseId ->
                 navController.navigate(
                     Routes.WorkoutDetail.createRoute(
                         sessionId = sessionId,
@@ -92,6 +91,8 @@ fun ExerciseListScreen(
                 currentExercise = exercise
                 showDeleteConfirm = true
             },
+            onMoveUp = { exerciseId -> viewModel.moveExerciseUp(sessionId, exerciseId) },
+            onMoveDown = { exerciseId -> viewModel.moveExerciseDown(sessionId, exerciseId) },
             modifier = Modifier
                 .padding(innerPadding)
                 .padding(horizontal = MaterialTheme.sizes.spacing.medium)
